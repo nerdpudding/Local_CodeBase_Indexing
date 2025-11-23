@@ -91,7 +91,7 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 ✅ **Reduced Hallucination** - Grounded in actual code
 ✅ **Context-Aware** - Understands your architecture and patterns
 ✅ **Privacy** - Local embeddings + storage (full privacy requires local inference LLM)
-✅ **Cost** - No API fees, unlimited queries
+✅ **Cost** - No API fees for local embeddings + storage (cloud options available with associated costs)
 ✅ **Works with smaller models** - Good context = great answers
 
 ⚠️ **Trade-offs:** ~30min setup, GPU required (15GB VRAM), storage (~160MB per 10K blocks)
