@@ -8,6 +8,7 @@ A complete local setup for intelligent codebase indexing using Ollama, Qwen3 emb
 
 ## Table of Contents
 
+- [About This Project](#about-this-project)
 - [What This Is (RAG for Code)](#what-this-is-rag-for-code)
   - [The Problem Without RAG](#the-problem-without-rag)
   - [The Solution With RAG](#the-solution-with-rag-this-project)
@@ -38,6 +39,30 @@ A complete local setup for intelligent codebase indexing using Ollama, Qwen3 emb
 - [License](#license)
 - [Contributing](#contributing)
 - [Acknowledgments](#acknowledgments)
+
+---
+
+## About This Project
+
+This repository documents setting up **local RAG (Retrieval Augmented Generation)** for code using [KiloCode](https://kilo.ai/) - my **preferred AI code assistant as of November 23rd, 2025** for its user-friendly interface and comprehensive features.
+
+**Purpose:** Make codebase indexing accessible through clear, user-friendly documentation. This is technical research simplified for developers who want to understand WHY and HOW RAG works, not just copy/paste commands.
+
+**What's included:**
+- Plain-English explanations of embeddings, vectors, and semantic search
+- Research on embedding models and why Qwen3-8B was chosen
+- Hardware-optimized setup guide (RTX 4090 + [Ollama](https://ollama.com/) + [Qdrant](https://qdrant.tech/))
+- **Complete Qdrant installation via Docker Compose**
+- Full documentation on architecture, performance, and troubleshooting
+
+**Prerequisites (not covered here):**
+- [Docker](https://www.docker.com/) - Already installed and configured
+- [Ollama](https://ollama.com/) - Already running with models pulled
+- Basic familiarity with terminal/command line
+
+**Starting point:** Based on [KiloCode's Codebase Indexing Documentation](https://kilo.ai/docs/features/codebase-indexing), customized for my hardware and needs.
+
+**Note:** The `docker-compose.yml` is tailored to my setup (e.g., `ollama-network`), but easily adaptable as a template. While focused on KiloCode, the RAG principles apply to any AI code assistant (Cursor, Continue, Aider, etc.).
 
 ---
 
