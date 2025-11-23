@@ -137,6 +137,28 @@ RAG (Retrieval Augmented Generation) is a simple three-step pattern:
 
 **Note:** This setup uses local embedding generation + local vector storage. You could optionally use cloud-based Qdrant or cloud embedding providers if your privacy requirements differ.
 
+---
+
+## Who Should Use This Setup
+
+**Ideal for:**
+- Individual developers with GPU hardware (16GB+ VRAM)
+- Privacy-focused development (code stays on your machine)
+- Unlimited usage scenarios (avoiding per-query API costs)
+- Learning RAG architecture and local AI infrastructure
+
+**Not ideal for:**
+- Team collaboration (single-workspace, single-user design)
+- Remote access needs (requires your machine running)
+- Limited hardware (GPU with 16GB+ VRAM required)
+- Enterprise deployment (no multi-user, access control, or redundancy)
+
+**For teams/enterprise:** Consider Qdrant Cloud, centralized embedding services, or cloud APIs (OpenAI, Voyage) with proper authentication and monitoring. This project demonstrates single-developer architecture - adapt for your scale and requirements.
+
+**Note on costs:** Electricity costs are highly individual (rates, usage patterns, existing vs. new hardware). Cloud provider pricing changes frequently. Evaluate based on your specific requirements and scale rather than generic comparisons.
+
+---
+
 ## Tech Stack
 
 | Component | Technology | Specification |
