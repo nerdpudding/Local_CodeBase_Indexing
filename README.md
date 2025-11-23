@@ -179,9 +179,12 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 You Ask: "How does auth work?"
     ↓
 KiloCode (VS Code Extension)
-    ↓ Creates embedding of your query
+    ↓ Sends query to Ollama API
 Ollama + Qwen3-Embedding-8B-FP16 (RTX 4090)
-    ↓ Converts to 4096-dimension vector
+    ↓ Creates 4096-dimension vector embedding
+    ↓ Returns vector to KiloCode
+KiloCode sends vector to Qdrant
+    ↓
 Qdrant Vector Database
     ↓ Finds similar code via cosine similarity
 Top 50 Relevant Code Snippets
@@ -373,26 +376,37 @@ This repository contains comprehensive documentation organized by workflow:
 ### Data Flow: Indexing
 ```
 Code Files
-  ↓ (Tree-sitter parsing)
+  ↓
+KiloCode (VS Code Extension)
+  ↓ Parses with Tree-sitter
 Semantic Blocks (functions, classes, methods)
-  ↓ (Ollama API call)
-Qwen3-Embedding-8B-FP16
-  ↓ (4096-dim vectors)
+  ↓ KiloCode sends blocks to Ollama API
+Ollama + Qwen3-Embedding-8B-FP16
+  ↓ Creates 4096-dim vector embeddings
+  ↓ Returns vectors to KiloCode
+KiloCode sends vectors + metadata to Qdrant
+  ↓
 Qdrant Collection (kilocode_codebase)
-  ↓ (Persistent storage)
+  ↓ Persistent storage
 Indexed Codebase
 ```
 
 ### Data Flow: Search
 ```
 Natural Language Query
-  ↓ (KiloCode API)
-Ollama Embedding (query → 4096-dim vector)
-  ↓ (Similarity search)
-Qdrant Cosine Matching
-  ↓ (Top-N results)
+  ↓
+KiloCode (VS Code Extension)
+  ↓ Sends query to Ollama API
+Ollama + Qwen3-Embedding-8B-FP16
+  ↓ Creates 4096-dim vector embedding
+  ↓ Returns vector to KiloCode
+KiloCode sends vector to Qdrant
+  ↓
+Qdrant Vector Database
+  ↓ Cosine similarity search
+  ↓ Returns top-N matches
 Code Snippets + Metadata (file, lines, score)
-  ↓ (Display)
+  ↓ Sent back to KiloCode
 KiloCode Results Panel
 ```
 
