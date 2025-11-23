@@ -1,0 +1,263 @@
+# Local Codebase Indexing - Git Ignore Rules
+
+# ============================================================================
+# Qdrant Vector Database
+# ============================================================================
+# Qdrant data volumes and storage
+qdrant_storage/
+qdrant_data/
+qdrant/
+.qdrant/
+*.qdrant
+
+# Qdrant snapshots and backups
+qdrant_snapshots/
+*.snapshot
+
+# ============================================================================
+# Docker & Containers
+# ============================================================================
+# Docker Compose overrides
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# Docker volumes
+.docker/
+volumes/
+
+# ============================================================================
+# Python
+# ============================================================================
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ============================================================================
+# Node.js / JavaScript
+# ============================================================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================================================
+# IDE & Editors
+# ============================================================================
+# VS Code
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.history/
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================================================
+# Operating Systems
+# ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================================================
+# Logs & Temporary Files
+# ============================================================================
+# Log files
+*.log
+logs/
+*.log.*
+log/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# ============================================================================
+# Environment & Secrets
+# ============================================================================
+# Environment variables
+.env
+.env.local
+.env.*.local
+.envrc
+
+# API keys and secrets (even though this is local)
+secrets/
+*.key
+*.pem
+*.p12
+credentials.json
+config.local.*
+
+# ============================================================================
+# Testing & Coverage
+# ============================================================================
+# Test outputs
+test-results/
+coverage/
+.nyc_output/
+
+# ============================================================================
+# Database & Data
+# ============================================================================
+# SQLite databases (if any helper scripts use them)
+*.db
+*.sqlite
+*.sqlite3
+
+# Data files
+data/
+*.csv
+*.json.bak
+*.backup
+
+# ============================================================================
+# Ollama (if storing local copies)
+# ============================================================================
+# Ollama model files (should be in Docker, but just in case)
+ollama_models/
+*.gguf
+*.bin
+
+# ============================================================================
+# Build & Compiled Files
+# ============================================================================
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ============================================================================
+# Documentation Build
+# ============================================================================
+# Generated docs (if you add tooling later)
+docs/_build/
+site/
+.mkdocs/
+
+# ============================================================================
+# Benchmarks & Profiling
+# ============================================================================
+# Performance profiling
+*.prof
+*.pstats
+benchmark_results/
+
+# ============================================================================
+# Git & Version Control
+# ============================================================================
+# Git merge files
+*.orig
+
+# Patch files
+*.patch
+*.diff
+
+# ============================================================================
+# Project Specific
+# ============================================================================
+# Embedding model evaluation results (if you run comparisons)
+embeddings_eval/
+model_comparisons/
+
+# Index status files (if KiloCode creates them)
+.kilocode/
+.indexing_status
+
+# Performance metrics
+metrics/
+performance_logs/
+
+# Experimental configurations
+experiments/
+scratch/
