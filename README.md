@@ -155,7 +155,7 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 
 ✅ **Accuracy** - LLM answers based on YOUR code, not assumptions
 ✅ **Context-Aware** - Understands your architecture, patterns, conventions
-✅ **No Hallucination** - Grounded in actual code that exists
+✅ **Reduced Hallucination** - Grounded in actual code
 ✅ **Efficient** - No manual file hunting or copy/pasting
 ✅ **Semantic Search** - Finds code by meaning, not just keywords
 ✅ **Works with smaller models** - Even basic LLMs give great answers with good context
