@@ -71,22 +71,26 @@ After evaluating 9 embedding models, Qwen3-Embedding-8B was selected for:
 
 See [qwen3-embedding-kilocode-setup-report.md](qwen3-embedding-kilocode-setup-report.md) for detailed comparison.
 
-## Why 1024 Dimensions?
+## Why 4096 Dimensions?
 
-Qwen3 supports Matryoshka embeddings (32-4096 dimensions). 1024 was chosen for:
+Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but Ollama outputs **4096 by default**:
 
-- **Quality:** 98-99% of maximum performance
-- **Efficiency:** 4× less storage than full 4096 dims
-- **Speed:** ~15ms search time
-- **Industry standard:** Production code search sweet spot
+- **Quality:** 100% maximum performance (no quality loss)
+- **Simplicity:** No configuration needed, works out of the box
+- **Speed:** Still fast (~20-30ms search on RTX 4090)
+- **Storage:** ~160MB for 10K blocks (acceptable with local setup)
+
+**Note:** While 1024 dimensions would be more storage-efficient (98-99% quality), using the 4096 default eliminates configuration complexity and provides maximum quality for local deployments.
 
 | Dimensions | Quality | Use Case |
 |------------|---------|----------|
 | 256 | ~95% | Mobile/massive scale |
 | 512 | ~97% | Large scale deployments |
-| **1024** | **~99%** | **Recommended (this project)** |
+| 1024 | ~99% | Balanced quality/storage |
 | 2048 | ~99.7% | Specialized domains |
-| 4096 | 100% | Research/benchmarking |
+| **4096** | **100%** | **This project (model default)** |
+
+**Note:** While the model supports Matryoshka embeddings (configurable dimensions), Ollama's default implementation outputs **4096 dimensions**. This provides maximum quality with no configuration needed.
 
 ## Prerequisites
 
@@ -121,9 +125,17 @@ ollama pull qwen3-embedding:8b-fp16
 ```
 
 ### 2. Deploy Qdrant
-*(Docker Compose file and deployment steps coming soon)*
+```bash
+docker compose up -d
+```
 
-Follow the step-by-step guide: [qdrant-setup-guide.md](qdrant-setup-guide.md)
+Verify it's running:
+```bash
+docker ps | grep qdrant
+curl http://localhost:6333/healthz
+```
+
+Dashboard available at: http://localhost:6333/dashboard
 
 ### 3. Configure KiloCode
 1. Open VS Code with KiloCode extension
@@ -131,15 +143,24 @@ Follow the step-by-step guide: [qdrant-setup-guide.md](qdrant-setup-guide.md)
 3. Configure:
    - **Enable:** ✓ Codebase Indexing
    - **Provider:** Ollama
+   - **Ollama base URL:** http://localhost:11434/
    - **Model:** qwen3-embedding:8b-fp16
+   - **Model dimension:** 4096
    - **Qdrant URL:** http://localhost:6333
-   - **Collection:** kilocode_codebase
-   - **Max Results:** 20
+   - **Qdrant API key:** (leave empty for local)
+   - **Max Results:** 50 (recommended for code search)
+   - **Search score threshold:** 0.40 (default)
 
-### 4. Index Your Codebase
-1. Open your project in VS Code
-2. KiloCode will automatically start indexing
-3. Watch status indicator: Gray → Yellow (indexing) → Green (ready)
+### 4. Start Indexing
+1. Click **Save** in KiloCode settings
+2. Click **Start Indexing**
+3. KiloCode will:
+   - **Auto-create collection** (workspace-based name)
+   - Parse code with Tree-sitter
+   - Generate embeddings via Ollama
+   - Store vectors in Qdrant
+4. Watch status: Gray → Yellow (indexing) → Green (ready)
+5. Indexing time: ~10-20 minutes for typical project
 
 ### 5. Search!
 ```
