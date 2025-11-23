@@ -95,10 +95,10 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 | Without RAG | With RAG (This Project) |
 |-------------|-------------------------|
 | **Q:** "What database do we use?" | **Q:** "What database do we use?" |
-| **A:** "After manually reading package.json, database config files, and connection modules... PostgreSQL 14, configured in `config/database.js:12`" (correct, but inefficient - read 5+ files, wasted tokens) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate, instant) |
+| **A:** (After manually reading package.json, database config files, and connection modules...) "PostgreSQL 14, configured in `config/database.js:12`" (correct, but inefficient - read 5+ files, wasted tokens) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate, instant) |
 | | |
 | **Q:** "How do I add authentication?" | **Q:** "How do I add authentication?" |
-| **A:** "After trial and error reading auth.ts, jwt.service.ts, middleware files... your project uses JWT with refresh tokens in `auth/jwt.service.ts:34-67`" (correct, but slow - read 10+ files manually) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific, instant) |
+| **A:** (After trial and error reading auth.ts, jwt.service.ts, middleware files...) "your project uses JWT with refresh tokens in `auth/jwt.service.ts:34-67`" (correct, but slow - read 10+ files manually) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific, instant) |
 
 **The key difference:** RAG's semantic search finds code by meaning (not just keywords), enabling natural language queries across different naming conventions. Without RAG, you need exact terminology or better prompting to identify what to search for.
 
