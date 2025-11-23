@@ -2,7 +2,7 @@
 
 > State-of-the-art semantic code search powered by local AI - optimized for RTX 4090
 
-A complete local setup for intelligent codebase indexing using Ollama, Qwen3 embeddings, Qdrant vector database, and the KiloCode VS Code extension. Provides natural language code search with 100% privacy, no API costs, and no rate limits.
+A complete local setup for intelligent codebase indexing using Ollama, Qwen3 embeddings, Qdrant vector database, and the KiloCode VS Code extension. Provides natural language code search with local embeddings, no API costs, and no rate limits. (Full privacy requires both local embeddings AND local inference LLM.)
 
 ---
 
@@ -105,13 +105,13 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 - ❌ **Read files blindly** - Opens random files hoping to find relevant code
 - ❌ **No semantic understanding** - Can't search by meaning, only by filename/path
 - ❌ **Wastes time on irrelevant files** - Like reading every page of a book to find one paragraph
-- ❌ **Struggles with large codebases** - 100+ files? Good luck finding the right ones
+- ❌ **Struggles with large codebases** - 100+ files? Good luck finding the right ones quickly
 - ❌ **Expensive token usage** - Reads entire files even if only 5 lines are relevant
-- ❌ **Might give up** - Falls back to generic advice if it can't find anything quickly
+- ❌ **Trial and error** - You have to manually guide it to the right files
 
-**Result:** Either vague generic answers, or it reads 20 files and still misses the important ones.
+**Result:** It CAN give correct answers, but it's **extremely inefficient** - wasting tokens, time, and effort. You might get the right answer after reading 20 files, or settle for generic advice.
 
-**Analogy:** Like trying to find a specific topic on the internet by opening **every single website** and reading them one by one, instead of using Google.
+**Analogy:** Like trying to find a specific topic on the internet by opening **every single website** and reading them one by one, instead of using Google. It works, but why would you?
 
 ---
 
@@ -142,12 +142,12 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 | Without RAG | With RAG (This Project) |
 |-------------|-------------------------|
 | **Q:** "What database do we use?" | **Q:** "What database do we use?" |
-| **A:** "Common choices are PostgreSQL, MongoDB, MySQL..." (generic) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate) |
+| **A:** "After manually reading package.json, database config files, and connection modules... PostgreSQL 14, configured in `config/database.js:12`" (correct, but inefficient - read 5+ files, wasted tokens) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate, instant) |
 | | |
 | **Q:** "How do I add authentication?" | **Q:** "How do I add authentication?" |
-| **A:** "You can use JWT tokens or sessions..." (vague) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific) |
+| **A:** "After trial and error reading auth.ts, jwt.service.ts, middleware files... your project uses JWT with refresh tokens in `auth/jwt.service.ts:34-67`" (correct, but slow - read 10+ files manually) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific, instant) |
 
-**The difference:** Generic knowledge vs. YOUR codebase knowledge.
+**The difference:** Inefficient manual file reading vs. instant semantic search - both CAN work, but one wastes tokens and time.
 
 ---
 
@@ -159,7 +159,7 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 ✅ **Efficient** - No manual file hunting or copy/pasting
 ✅ **Semantic Search** - Finds code by meaning, not just keywords
 ✅ **Works with smaller models** - Even basic LLMs give great answers with good context
-✅ **Privacy** - Everything local, code never leaves your machine
+✅ **Privacy** - Embeddings generated and stored locally (code snippets sent to LLM - full privacy requires local inference LLM)
 ✅ **Unlimited queries** - No API costs or rate limits
 
 ### Trade-offs
@@ -197,11 +197,13 @@ LLM (with YOUR code context)
 
 ### Why Local?
 
-- **Privacy:** Code never leaves your machine
+- **Privacy:** Embeddings generated AND stored locally in Qdrant (full privacy requires local inference LLM for KiloCode responses)
 - **Cost:** Minimal ongoing electricity costs vs per-usage cloud API fees
 - **Performance:** No network latency, no rate limits
 - **Control:** Your hardware, your rules
 - **No vendor lock-in:** Works offline, independent of cloud services
+
+**Note:** This setup uses local embedding generation + local vector storage. You could optionally use cloud-based Qdrant or cloud embedding providers if your privacy requirements differ.
 
 ## Tech Stack
 
@@ -480,7 +482,7 @@ curl http://localhost:6333/collections/kilocode_codebase
 - **Rate limits:** Applied
 - **Privacy:** Code sent to cloud
 
-**Winner:** Local setup - unlimited queries, complete privacy, minimal ongoing costs vs per-usage cloud fees
+**Winner:** Local setup - unlimited queries, local embeddings + storage (complete privacy requires local inference LLM), minimal ongoing costs vs per-usage cloud fees
 
 ## Project Status
 
