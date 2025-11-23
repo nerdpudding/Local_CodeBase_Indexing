@@ -4,26 +4,109 @@
 
 A complete local setup for intelligent codebase indexing using Ollama, Qwen3 embeddings, Qdrant vector database, and the KiloCode VS Code extension. Provides natural language code search with 100% privacy, no API costs, and no rate limits.
 
-## What This Is
+## What This Is (RAG for Code)
 
-Traditional code search relies on text matching (grep, regex). This project implements **semantic search** - understanding *meaning* rather than just matching characters. Ask questions like "where is user authentication handled?" and get relevant code snippets even if those exact words don't appear.
+This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate context from YOUR codebase before they answer questions.
 
-**The Stack:**
+### The Problem Without RAG
+
+**You ask an LLM:** *"How does error handling work in this project?"*
+
+**Without codebase indexing, the LLM:**
+- ❌ Doesn't know YOUR code exists
+- ❌ Guesses based on general programming knowledge
+- ❌ Might hallucinate patterns you don't actually use
+- ❌ Gives generic answers like "typically you use try/catch..."
+- ❌ Can't point to actual files or line numbers
+- ❌ Requires you to manually copy/paste code into prompts
+
+**Result:** Vague, generic answers that may not match your actual implementation.
+
+---
+
+### The Solution With RAG (This Project)
+
+**You ask the same question:** *"How does error handling work in this project?"*
+
+**With codebase indexing, the LLM:**
+1. ✅ **Searches your code** - Finds all error handling patterns semantically
+2. ✅ **Gets actual snippets** - Retrieves relevant code from YOUR project
+3. ✅ **Answers with context** - Uses YOUR code to give accurate answers
+4. ✅ **Cites sources** - Points to specific files and line numbers
+5. ✅ **No hallucination** - Based on real code, not guesses
+
+**Result:** Accurate, project-specific answers like:
+> "Your project uses custom ErrorHandler middleware in `src/middleware/error.ts:23-45` that catches all Express errors and logs them to Winston. Database errors are handled separately in `src/db/connection.ts:89-102` with retry logic."
+
+---
+
+### Why This Matters
+
+**Concrete Example:**
+
+| Without RAG | With RAG (This Project) |
+|-------------|-------------------------|
+| **Q:** "What database do we use?" | **Q:** "What database do we use?" |
+| **A:** "Common choices are PostgreSQL, MongoDB, MySQL..." (generic) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate) |
+| | |
+| **Q:** "How do I add authentication?" | **Q:** "How do I add authentication?" |
+| **A:** "You can use JWT tokens or sessions..." (vague) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific) |
+
+**The difference:** Generic knowledge vs. YOUR codebase knowledge.
+
+---
+
+### Key Benefits
+
+✅ **Accuracy** - LLM answers based on YOUR code, not assumptions
+✅ **Context-Aware** - Understands your architecture, patterns, conventions
+✅ **No Hallucination** - Grounded in actual code that exists
+✅ **Efficient** - No manual file hunting or copy/pasting
+✅ **Semantic Search** - Finds code by meaning, not just keywords
+✅ **Works with smaller models** - Even basic LLMs give great answers with good context
+✅ **Privacy** - Everything local, code never leaves your machine
+✅ **Unlimited queries** - No API costs or rate limits
+
+### Trade-offs
+
+⚠️ **Initial setup** - ~30 minutes to configure (one-time)
+⚠️ **Indexing time** - 10-20 minutes per project (one-time, auto-updates after)
+⚠️ **Storage** - ~160MB per 10K code blocks
+⚠️ **GPU required** - Needs RTX 4090 or similar (15GB VRAM)
+
+**Worth it?** If you work with large codebases and want accurate AI assistance, absolutely yes.
+
+---
+
+### How RAG Works (The Stack)
+
 ```
+You Ask: "How does auth work?"
+    ↓
 KiloCode (VS Code Extension)
-    ↓ Code parsing & queries
+    ↓ Creates embedding of your query
 Ollama + Qwen3-Embedding-8B-FP16 (RTX 4090)
-    ↓ 1024-dimension vectors
+    ↓ Converts to 4096-dimension vector
 Qdrant Vector Database
-    ↓ Cosine similarity search
-Semantic Search Results
+    ↓ Finds similar code via cosine similarity
+Top 50 Relevant Code Snippets
+    ↓ Injected into LLM context
+LLM (with YOUR code context)
+    ↓ Generates accurate answer
+"Your auth is in middleware/auth.ts using JWT..."
 ```
 
-**Why Local?**
+**This is production-grade RAG** - the same technology behind ChatGPT's "custom GPTs" and enterprise AI assistants, but 100% local.
+
+---
+
+### Why Local?
+
 - **Privacy:** Code never leaves your machine
 - **Cost:** ~$50/year electricity vs $12-200/year for cloud APIs
 - **Performance:** No network latency, no rate limits
 - **Control:** Your hardware, your rules
+- **No vendor lock-in:** Works offline, independent of cloud services
 
 ## Tech Stack
 
