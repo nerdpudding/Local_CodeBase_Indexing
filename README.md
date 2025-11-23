@@ -8,33 +8,33 @@ A complete local setup for intelligent codebase indexing using Ollama, Qwen3 emb
 
 ## Table of Contents
 
+### Overview
 - [About This Project](#about-this-project)
 - [What This Is (RAG for Code)](#what-this-is-rag-for-code)
-  - [The Problem Without RAG](#the-problem-without-rag)
-  - [The Solution With RAG](#the-solution-with-rag-this-project)
-  - [Why This Matters](#why-this-matters)
-  - [Key Benefits](#key-benefits)
-  - [Trade-offs](#trade-offs)
-  - [How RAG Works](#how-rag-works-the-stack)
+  - [The Problem → Solution](#the-problem--solution)
+  - [Why It Matters](#why-it-matters)
+  - [How RAG Works](#how-rag-works-conceptual-overview)
   - [Why Local?](#why-local)
+
+### Technical Details
 - [Tech Stack](#tech-stack)
 - [Key Features](#key-features)
-- [Why Qwen3-Embedding-8B?](#why-qwen3-embedding-8b)
-- [Why 4096 Dimensions?](#why-4096-dimensions)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-  - [1. Pull the Embedding Model](#1-pull-the-embedding-model)
-  - [2. Deploy Qdrant](#2-deploy-qdrant)
-  - [3. Configure KiloCode](#3-configure-kilocode)
-  - [4. Start Indexing](#4-start-indexing)
-  - [5. Search!](#5-search)
-- [Documentation](#documentation)
+- [Why Qwen3](#why-qwen3-embedding-8b)
+- [Why 4096 Dimensions](#why-4096-dimensions)
 - [Architecture](#architecture)
-- [Configuration Details](#configuration-details)
 - [Performance Expectations](#performance-expectations)
 - [Cost Analysis](#cost-analysis)
-- [Project Status](#project-status)
+
+### Getting Started
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [My Docker Setup](#my-docker-setup-reference-only)
+
+### Reference
+- [Documentation](#documentation)
+- [Configuration Details](#configuration-details)
 - [Troubleshooting](#troubleshooting)
+- [Project Status](#project-status)
 - [Technical References](#technical-references)
 - [License](#license)
 - [Contributing](#contributing)
@@ -64,80 +64,11 @@ This repository documents setting up **local RAG (Retrieval Augmented Generation
 
 **Note:** The `docker-compose.yml` is tailored to my setup (e.g., `ollama-network`), but easily adaptable as a template. While focused on KiloCode, the RAG principles apply to any AI code assistant (Cursor, Continue, Aider, etc.).
 
-### My Docker Setup (Reference Only)
-
-**Important:** This documentation is optimized for MY specific environment but designed as a reference for others to adapt.
-
-For context, here's how I run Ollama in Docker:
-
-```bash
-docker run -d \
-  --network ollama-network \
-  --gpus device=all \
-  -v ollama:/root/.ollama \
-  -p 11434:11434 \
-  --name ollama \
-  -e OLLAMA_FLASH_ATTENTION=1 \
-  -e OLLAMA_KV_CACHE_TYPE=q8_0 \
-  ollama/ollama
-```
-
-**Key parameters explained:**
-- `--network ollama-network`: **OPTIONAL** - My custom Docker network. You can omit this, use your own network, or run without one entirely.
-- `OLLAMA_FLASH_ATTENTION=1`: **Optional (recommended)** - Performance optimization for faster inference.
-- `OLLAMA_KV_CACHE_TYPE=q8_0`: **Optional** - Enables lower VRAM usage at minimal accuracy cost.
-
-**Adapt to your needs:** Don't blindly copy the network setting. Either remove it, use your existing Docker network, or create your own. The setup works perfectly fine without custom networks.
-
-For detailed Ollama configuration options, see the [official Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/docker.md).
-
----
-
 ## What This Is (RAG for Code)
 
 This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate context from YOUR codebase before they answer questions.
 
-### The Problem Without RAG
-
-**You ask an LLM:** *"How does error handling work in this project?"*
-
-**Without codebase indexing, the LLM has to:**
-- ❌ **Read files blindly** - Opens random files hoping to find relevant code
-- ❌ **No semantic understanding** - Can't search by meaning, only by filename/path
-- ❌ **Wastes time on irrelevant files** - Like reading every page of a book to find one paragraph
-- ❌ **Struggles with large codebases** - 100+ files? Good luck finding the right ones quickly
-- ❌ **Expensive token usage** - Reads entire files even if only 5 lines are relevant
-- ❌ **Trial and error** - You have to manually guide it to the right files
-
-**Result:** It CAN give correct answers, but it's **extremely inefficient** - wasting tokens, time, and effort. You might get the right answer after reading 20 files, or settle for generic advice.
-
-**Analogy:** Like trying to find a specific topic on the internet by opening **every single website** and reading them one by one, instead of using Google. It works, but why would you?
-
----
-
-### The Solution With RAG (This Project)
-
-**You ask the same question:** *"How does error handling work in this project?"*
-
-**With codebase indexing, the LLM does:**
-1. ✅ **Semantic search FIRST** - Like using Google: finds relevant code by *meaning*, not filenames
-2. ✅ **Gets only relevant snippets** - Retrieves top 50 matches for "error handling" across entire codebase
-3. ✅ **Faster & more accurate** - Finds `ErrorHandler`, `try/catch`, `error middleware` even if files aren't named that
-4. ✅ **Efficient** - Only reads relevant parts, not entire files
-5. ✅ **Comprehensive** - Finds ALL error patterns across multiple files in milliseconds
-6. ✅ **Answers with context** - Uses YOUR actual code to give specific answers
-7. ✅ **Cites sources** - Points to exact files and line numbers
-
-**Result:** Accurate, project-specific answers like:
-> "Your project uses custom ErrorHandler middleware in `src/middleware/error.ts:23-45` that catches all Express errors and logs them to Winston. Database errors are handled separately in `src/db/connection.ts:89-102` with retry logic."
-
-**Analogy:** Like using Google to search "error handling patterns in Node.js" and getting the exact StackOverflow answers you need, instead of reading every forum post on the internet.
-
----
-
-### Why This Matters
-
-**Concrete Example:**
+### The Problem → Solution
 
 | Without RAG | With RAG (This Project) |
 |-------------|-------------------------|
@@ -145,29 +76,25 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 | **A:** "After manually reading package.json, database config files, and connection modules... PostgreSQL 14, configured in `config/database.js:12`" (correct, but inefficient - read 5+ files, wasted tokens) | **A:** "PostgreSQL 14, configured in `config/database.js:12` with connection pooling (max 20 connections)" (accurate, instant) |
 | | |
 | **Q:** "How do I add authentication?" | **Q:** "How do I add authentication?" |
-| **A:** "After trial and error reading auth.ts, jwt.service.ts, middleware files... your project uses JWT with refresh tokens in `auth/jwt.service.ts:34-67`" (correct, but slow - read 10+ files manually) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification" (specific, instant) |
+| **A:** "After trial and error reading auth.ts, jwt.service.ts, middleware files... your project uses JWT with refresh tokens in `auth/jwt.service.ts:34-67`" (correct, but slow - read 10+ files manually) | **A:** "Your project uses JWT with refresh tokens. See `auth/jwt.service.ts:34-67` for token generation and `middleware/auth.ts:12-28` for verification` (specific, instant) |
 
-**The difference:** Inefficient manual file reading vs. instant semantic search - both CAN work, but one wastes tokens and time.
+**The core difference:** Without RAG, LLMs CAN answer correctly but must manually read many files (inefficient, slow, expensive tokens). With RAG, semantic search finds ONLY relevant code instantly.
+
+**Analogy:** Using Google to find specific information vs. reading every website on the internet one by one. Both work, but one is massively more efficient.
 
 ---
 
-### Key Benefits
+### Why It Matters
 
-✅ **Accuracy** - LLM answers based on YOUR code, not assumptions
-✅ **Context-Aware** - Understands your architecture, patterns, conventions
+✅ **Accuracy** - Answers based on YOUR code, not assumptions
+✅ **Efficiency** - Instant semantic search, no manual file hunting
 ✅ **Reduced Hallucination** - Grounded in actual code
-✅ **Efficient** - No manual file hunting or copy/pasting
-✅ **Semantic Search** - Finds code by meaning, not just keywords
-✅ **Works with smaller models** - Even basic LLMs give great answers with good context
-✅ **Privacy** - Embeddings generated and stored locally (code snippets sent to LLM - full privacy requires local inference LLM)
-✅ **Unlimited queries** - No API costs or rate limits
+✅ **Context-Aware** - Understands your architecture and patterns
+✅ **Privacy** - Local embeddings + storage (full privacy requires local inference LLM)
+✅ **Cost** - No API fees, unlimited queries
+✅ **Works with smaller models** - Good context = great answers
 
-### Trade-offs
-
-⚠️ **Initial setup** - ~30 minutes to configure (one-time)
-⚠️ **Indexing time** - Varies by project size (one-time, auto-updates after)
-⚠️ **Storage** - ~160MB per 10K code blocks
-⚠️ **GPU required** - Needs RTX 4090 or similar (15GB VRAM)
+⚠️ **Trade-offs:** ~30min setup, GPU required (15GB VRAM), storage (~160MB per 10K blocks)
 
 **Worth it?** If you work with large codebases and want accurate AI assistance, absolutely yes.
 
@@ -348,6 +275,37 @@ Natural language queries in KiloCode:
 - "database connection setup"
 - "API endpoint definitions"
 ```
+
+---
+
+## My Docker Setup (Reference Only)
+
+**Important:** This documentation is optimized for MY specific environment but designed as a reference for others to adapt.
+
+For context, here's how I run Ollama in Docker:
+
+```bash
+docker run -d \
+  --network ollama-network \
+  --gpus device=all \
+  -v ollama:/root/.ollama \
+  -p 11434:11434 \
+  --name ollama \
+  -e OLLAMA_FLASH_ATTENTION=1 \
+  -e OLLAMA_KV_CACHE_TYPE=q8_0 \
+  ollama/ollama
+```
+
+**Key parameters explained:**
+- `--network ollama-network`: **OPTIONAL** - My custom Docker network. You can omit this, use your own network, or run without one entirely.
+- `OLLAMA_FLASH_ATTENTION=1`: **Optional (recommended)** - Performance optimization for faster inference.
+- `OLLAMA_KV_CACHE_TYPE=q8_0`: **Optional** - Enables lower VRAM usage at minimal accuracy cost.
+
+**Adapt to your needs:** Don't blindly copy the network setting. Either remove it, use your existing Docker network, or create your own. The setup works perfectly fine without custom networks.
+
+For detailed Ollama configuration options, see the [official Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/docker.md).
+
+---
 
 ## Documentation
 
