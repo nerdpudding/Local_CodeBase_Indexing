@@ -1,0 +1,32 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-kilocode
+    restart: unless-stopped
+
+    ports:
+      # HTTP API - for KiloCode connection
+      - "6333:6333"
+      # gRPC API - for high-performance operations
+      - "6334:6334"
+
+    volumes:
+      # Persistent storage for vector data
+      - qdrant_storage:/qdrant/storage
+
+    environment:
+      # Optional: Set log level (info, debug, warn, error)
+      - QDRANT__LOG_LEVEL=info
+
+    networks:
+      # Join the existing ollama network for container-to-container communication
+      - ollama-network
+
+volumes:
+  qdrant_storage:
+    driver: local
+
+networks:
+  # Use the existing ollama-network (must already exist)
+  ollama-network:
+    external: true
