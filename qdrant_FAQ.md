@@ -135,6 +135,70 @@ Think of it like **resolution** or **detail level** for your code embeddings.
 
 ---
 
+### Does it replace old embeddings or keep both versions?
+
+**Short answer:** It **replaces/overwrites** old embeddings. You won't have duplicate or stale results.
+
+**How it works:**
+
+When you edit a file, KiloCode:
+1. **Detects change** - File watcher notices the save (GPU spins up briefly!)
+2. **Deletes old vectors** - Removes all embeddings for that file from Qdrant
+3. **Re-parses file** - Tree-sitter extracts updated code blocks
+4. **Generates new embeddings** - Ollama creates fresh vectors (this is the GPU activity)
+5. **Inserts new vectors** - Qdrant stores only the updated version
+
+**Example:**
+
+```
+Original README.md: "Use 1024 dimensions"
+→ Indexed with embeddings for that text
+
+You edit README.md: "Use 4096 dimensions"
+→ Old "1024 dimensions" vectors DELETED
+→ New "4096 dimensions" vectors INSERTED
+
+You search: "What dimensions should I use?"
+→ Returns: "4096 dimensions" ✅ (current/correct)
+→ NOT: Both "1024" and "4096" ❌ (would be wrong)
+```
+
+**Vector tracking:**
+
+Each vector has metadata (payload) that identifies it:
+```json
+{
+  "id": "unique-vector-id",
+  "vector": [4096 numbers...],
+  "payload": {
+    "file": "README.md",
+    "startLine": 42,
+    "endLine": 58,
+    "content": "actual code snippet",
+    "hash": "abc123..."
+  }
+}
+```
+
+KiloCode finds all vectors with matching `file` path, deletes them, and replaces with current content.
+
+**Result:** Your index stays accurate and current automatically - no stale data!
+
+**You can verify this:**
+```bash
+# Check total point count
+curl -s http://localhost:6333/collections/ws-{your-id} | jq .result.points_count
+
+# Edit a file and save (watch GPU briefly spin up)
+
+# Check count again - it won't keep growing with duplicates
+curl -s http://localhost:6333/collections/ws-{your-id} | jq .result.points_count
+```
+
+The count will change based on how block splitting works, but you'll never see both old and new versions in search results.
+
+---
+
 ### What's the typical daily workflow?
 
 **Morning (Project A):**
