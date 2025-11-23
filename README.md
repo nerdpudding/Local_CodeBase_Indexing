@@ -64,6 +64,33 @@ This repository documents setting up **local RAG (Retrieval Augmented Generation
 
 **Note:** The `docker-compose.yml` is tailored to my setup (e.g., `ollama-network`), but easily adaptable as a template. While focused on KiloCode, the RAG principles apply to any AI code assistant (Cursor, Continue, Aider, etc.).
 
+### My Docker Setup (Reference Only)
+
+**Important:** This documentation is optimized for MY specific environment but designed as a reference for others to adapt.
+
+For context, here's how I run Ollama in Docker:
+
+```bash
+docker run -d \
+  --network ollama-network \
+  --gpus device=all \
+  -v ollama:/root/.ollama \
+  -p 11434:11434 \
+  --name ollama \
+  -e OLLAMA_FLASH_ATTENTION=1 \
+  -e OLLAMA_KV_CACHE_TYPE=q8_0 \
+  ollama/ollama
+```
+
+**Key parameters explained:**
+- `--network ollama-network`: **OPTIONAL** - My custom Docker network. You can omit this, use your own network, or run without one entirely.
+- `OLLAMA_FLASH_ATTENTION=1`: **Optional (recommended)** - Performance optimization for faster inference.
+- `OLLAMA_KV_CACHE_TYPE=q8_0`: **Optional** - Enables lower VRAM usage at minimal accuracy cost.
+
+**Adapt to your needs:** Don't blindly copy the network setting. Either remove it, use your existing Docker network, or create your own. The setup works perfectly fine without custom networks.
+
+For detailed Ollama configuration options, see the [official Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/docker.md).
+
 ---
 
 ## What This Is (RAG for Code)
