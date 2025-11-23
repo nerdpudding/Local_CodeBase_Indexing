@@ -246,7 +246,11 @@ Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but Ollama outputs **
 ## Prerequisites
 
 ### Hardware
-- **GPU:** NVIDIA RTX 4090 (24GB VRAM)
+- **GPU:** NVIDIA GPU with **16GB+ VRAM** (Qwen3-Embedding-8B-FP16 requires ~15GB)
+  - **This project uses:** RTX 4090 (24GB) for maximum performance
+  - **Alternatives:** Smaller embedding models available for lower VRAM cards (see research docs)
+  - **Budget option:** Quantized models reduce VRAM further (with minor quality trade-off)
+  - **Note:** This setup targets state-of-the-art local performance; adjust model choice for your hardware
 - **RAM:** 16GB+ system RAM recommended
 - **Storage:** 50GB+ free space (model + vectors + Docker)
 
