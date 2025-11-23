@@ -6,11 +6,11 @@ Real-world implementation notes from setting up local codebase indexing with Oll
 
 ## Key Discoveries
 
-### 1. Ollama Outputs 4096 Dimensions by Default
+### 1. Qwen3-8B via Ollama Outputs 4096 Dimensions
 
-**What we expected:** Based on research, 1024 dimensions seemed optimal (98-99% quality, 4× less storage)
+**What we expected:** Based on research, 1024 dimensions seemed optimal (98-99% quality, 4× less storage compared to 4096)
 
-**What actually happened:** Ollama's Qwen3-Embedding-8B-FP16 outputs **4096 dimensions** by default
+**What actually happened:** Qwen3-Embedding-8B-FP16 through Ollama outputs **4096 dimensions**
 
 **Verification:**
 ```bash
@@ -25,7 +25,7 @@ curl -s http://localhost:11434/api/embeddings -d '{
 - ✅ **Maximum quality** (100% model performance)
 - ✅ **No configuration needed** (works out of the box)
 - ⚠️ **4× storage** (~160MB vs ~40MB for 10K blocks)
-- ⚠️ **Slightly slower search** (~20-30ms vs ~15ms)
+- ⚠️ **Slightly slower search** (more dimensions to process)
 
 **Decision:** Use 4096 dimensions for simplicity and maximum quality. With RTX 4090 and local storage, the trade-offs are acceptable.
 
@@ -60,9 +60,9 @@ Failed to process batch after 3 attempts: Bad Request
 ```
 
 **Root cause:**
-- KiloCode configured for 1024 dimensions
-- Ollama outputting 4096 dimensions
-- Qdrant collection created for 1024 dimensions
+- KiloCode initially configured for 1024 dimensions (based on research)
+- Qwen3-8B via Ollama actually outputting 4096 dimensions
+- Qdrant collection created for 1024 dimensions (mismatch)
 - Insertion failed: vector size mismatch
 
 **Solution:**
@@ -117,43 +117,35 @@ exec: "wget": executable file not found in $PATH
 
 ## What Works Great
 
-### RAG for Code (Retrieval Augmented Generation)
+### RAG Performance in Practice
 
-**Complete workflow:**
-1. User asks: "What are the hardware requirements?"
-2. Chat model decides to use `codebase_search` tool
-3. Query → Qwen3-Embedding → 4096-dim vector
-4. Qdrant similarity search → Top 50 results
-5. Results → Chat model context
-6. Model generates answer from retrieved snippets
+**Testing results:**
+- **Query:** "hardware requirements"
+- **Found:** RTX 4090, VRAM specs, storage needs across 4 different markdown files
+- **Top result score:** 0.631 (good relevance)
+- **Search time:** Fast (milliseconds)
 
-**Benefits observed:**
-- ✅ No manual file pointing needed
-- ✅ Finds relevant content across multiple files
-- ✅ ~100ms search latency (very fast)
+**Observed benefits:**
+- ✅ Finds relevant content across multiple files automatically
 - ✅ Natural language queries work perfectly
 - ✅ Semantic understanding (concepts, not just keywords)
+- ✅ No manual file pointing needed
 
-**Example:**
-- Query: "hardware requirements"
-- Found: RTX 4090, VRAM specs, storage needs across 4 different markdown files
-- Score: 0.631 relevance on top result
+> For detailed RAG explanation, see [README.md](README.md) and [FAQ.md](FAQ.md)
 
 ---
 
 ## Performance Metrics (RTX 4090)
 
 ### Indexing
-- **This repo** (5 markdown files, ~800 blocks): ~2-3 minutes
+- **This repo** (5 markdown files, ~800 blocks): Minutes (very fast with RTX 4090)
 - **GPU utilization:** Spikes to 100% during embedding generation
 - **VRAM usage:** ~15GB (Qwen3 model)
 - **Speed:** Very fast (RTX 4090 handles it easily)
 
 ### Search
-- **Embedding generation:** 50-100ms
-- **Vector search:** 10-20ms
-- **Total latency:** ~100ms
-- **Accuracy:** 0.631 top score (excellent)
+- **Total latency:** Fast local search (milliseconds)
+- **Accuracy:** High relevance scores observed (excellent)
 
 ### Storage
 - **Qdrant collection:** ~3-5MB for this small repo
@@ -169,7 +161,7 @@ exec: "wget": executable file not found in $PATH
 **Ollama:**
 - Model: `qwen3-embedding:8b-fp16`
 - Base URL: `http://localhost:11434/`
-- Output: 4096 dimensions (default)
+- Output: 4096 dimensions (model's output)
 
 **Qdrant:**
 - URL: `http://localhost:6333`
@@ -237,7 +229,7 @@ exec: "wget": executable file not found in $PATH
    - Set model dimension to 4096
    - Save and Start Indexing
 
-4. **Wait for indexing** (~10-20 min for typical project)
+4. **Wait for indexing** (varies by project size)
 
 5. **Start searching** with natural language!
 
@@ -262,8 +254,8 @@ exec: "wget": executable file not found in $PATH
 ### Future Optimizations
 
 **If storage becomes an issue:**
-- Configure Matryoshka for 1024 dimensions (via Ollama modelfile)
-- Trade 1% quality for 4× storage savings
+- Configure Matryoshka for 1024 dimensions via custom Ollama modelfile
+- Trade ~1% quality for 4× storage savings (4096 → 1024 dims)
 
 **If search is too slow:**
 - Reduce max results to 20-25
@@ -289,10 +281,10 @@ exec: "wget": executable file not found in $PATH
 
 ### What Surprised Us
 
-😮 **4096 dimensions default** - Expected 1024 from research
+😮 **Qwen3-8B outputs 4096 dimensions** - Expected 1024 from research
 😮 **Auto-collection creation** - Thought manual setup required
-😮 **Indexing speed** - Faster than expected (~2-3 min for this repo)
-😮 **Search quality** - 0.631 relevance scores excellent
+😮 **Indexing speed** - Very fast with RTX 4090 for this small repo
+😮 **Search quality** - High relevance scores observed (excellent)
 
 ---
 

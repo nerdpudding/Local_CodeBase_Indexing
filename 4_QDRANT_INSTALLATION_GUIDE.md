@@ -9,7 +9,7 @@
 
 ## Introduction
 
-This guide walks you through setting up Qdrant vector database to work with KiloCode's codebase indexing feature using the Qwen3-Embedding-8B model. We'll deploy Qdrant on the same Docker network as your existing Ollama installation, configure it for 1024-dimensional embeddings, and integrate it with KiloCode.
+This guide walks you through setting up Qdrant vector database to work with KiloCode's codebase indexing feature using the Qwen3-Embedding-8B model. We'll deploy Qdrant on the same Docker network as your existing Ollama installation, configure it for 4096-dimensional embeddings (what Qwen3-8B outputs via Ollama), and integrate it with KiloCode.
 
 **Prerequisites:**
 - Ollama running in Docker on `ollama-network`
@@ -139,14 +139,14 @@ If all commands succeed, Qdrant is ready!
 
 ## Create the Collection
 
-Create a collection configured for Qwen3's 1024-dimensional embeddings:
+Create a collection configured for Qwen3's 4096-dimensional embeddings:
 
 ```bash
 curl -X PUT http://localhost:6333/collections/kilocode_codebase \
   -H 'Content-Type: application/json' \
   -d '{
     "vectors": {
-      "size": 1024,
+      "size": 4096,
       "distance": "Cosine"
     }
   }'
@@ -159,7 +159,7 @@ curl -X PUT http://localhost:6333/collections/kilocode_codebase \
 
 **What this creates:**
 - Collection name: `kilocode_codebase`
-- Vector dimensions: **1024** (matches Qwen3-Embedding-8B output)
+- Vector dimensions: **4096** (matches Qwen3-Embedding-8B-FP16 output via Ollama)
 - Distance metric: **Cosine** (best for embeddings)
 
 **Verify collection was created:**
@@ -196,13 +196,13 @@ cat test_embedding.json | head -20
 
 # If you have jq installed, verify dimension:
 cat test_embedding.json | jq '.embedding | length'
-# Should output: 1024
+# Should output: 4096
 ```
 
 **What this tests:**
 - Ollama responds and generates embeddings
 - Qwen3-Embedding-8B model is working
-- Output is 1024 dimensions (as configured)
+- Output is 4096 dimensions (verified for this model)
 
 ---
 
@@ -220,7 +220,7 @@ Embedding Provider:
   Provider: Ollama
   Base URL: http://localhost:11434
   Model: qwen3-embedding:8b-fp16
-  Dimensions: 1024 (auto-detected, optional to specify)
+  Dimensions: 4096 (must match model output)
 
 Vector Database:
   Provider: Qdrant
@@ -229,7 +229,7 @@ Vector Database:
   Collection Name: kilocode_codebase
 
 Search Settings:
-  Max Search Results: 20
+  Max Search Results: 50
   Min Block Size: 100 chars
   Max Block Size: 1000 chars
 ```
@@ -240,9 +240,9 @@ Search Settings:
    - Case-sensitive
    - Must include the `:8b-fp16` tag
 
-2. **Dimensions**: 
-   - KiloCode auto-detects 1024 dimensions from the model
-   - You can explicitly set to 1024 for clarity
+2. **Dimensions**:
+   - Must be set to 4096 to match Qwen3-8B output
+   - Verify with: `curl http://localhost:11434/api/embeddings -d '{"model": "qwen3-embedding:8b-fp16", "prompt": "test"}' | jq '.embedding | length'`
 
 3. **No API Key Needed**:
    - Both services run locally without authentication
@@ -299,7 +299,7 @@ Here's how the entire system works:
    ↓
 4. Qwen3-Embedding-8B processes text on GPU
    ↓
-5. Returns 1024-dimensional vector
+5. Returns 4096-dimensional vector
    ↓
 6. KiloCode stores vector in Qdrant (http://localhost:6333)
    ↓
@@ -313,7 +313,7 @@ Your search query
    ↓
 Ollama (Qwen3-Embedding-8B)
    ↓
-1024-dimensional query vector
+4096-dimensional query vector
    ↓
 Qdrant similarity search
    ↓
@@ -337,22 +337,21 @@ Results displayed in KiloCode
 ### For a Typical Project (5K-10K code blocks)
 
 **Indexing Performance:**
-- Initial build time: 10-20 minutes
-- Embedding generation: ~50-100 vectors/second
+- Initial build time: Varies by codebase size (GPU-accelerated)
 - Bottleneck: GPU embedding generation (not Qdrant)
 - VRAM usage: ~15GB (Qwen3) + minimal for OS
 
 **Search Performance:**
-- Query latency: ~100ms per search
-  - Embedding generation: ~50-100ms (Qwen3)
-  - Vector search: ~10-20ms (Qdrant)
-  - Post-processing: ~5-10ms (KiloCode)
+- Query latency: Fast local search (milliseconds)
+- Embedding generation: GPU-accelerated (Qwen3)
+- Vector search: Fast similarity matching (Qdrant)
+- Post-processing: Minimal overhead (KiloCode)
 - Consistent latency (local = no network variance)
 
 **Quality Metrics:**
-- Top-1 accuracy: ~85-90% (finds exact match in top result)
-- Top-3 accuracy: ~95-97%
-- Top-10 accuracy: ~98-99%
+- High retrieval accuracy observed
+- Top results typically very relevant to query
+- Semantic understanding finds conceptually similar code
 
 ### Resource Usage
 
@@ -366,9 +365,9 @@ Available: ~9GB VRAM (for other tasks)
 
 **Qdrant Memory (typical codebase with 10K code blocks):**
 ```
-Vectors:   ~40MB (10K × 1024 dims × 4 bytes)
-Qdrant:    ~60MB (indexes + overhead)
-Total:     ~100MB RAM
+Vectors:   ~160MB (10K × 4096 dims × 4 bytes)
+Qdrant:    ~240MB (indexes + overhead)
+Total:     ~400MB RAM
 ```
 
 **Disk Storage:**
@@ -452,12 +451,12 @@ docker stats ollama qdrant
 # Delete collection
 curl -X DELETE http://localhost:6333/collections/kilocode_codebase
 
-# Recreate with correct dimensions (1024)
+# Recreate with correct dimensions (4096)
 curl -X PUT http://localhost:6333/collections/kilocode_codebase \
   -H 'Content-Type: application/json' \
   -d '{
     "vectors": {
-      "size": 1024,
+      "size": 4096,
       "distance": "Cosine"
     }
   }'
@@ -655,16 +654,16 @@ curl -H "api-key: your-super-secret-key-here" \
 
 You now have a production-ready local codebase indexing system:
 
-✅ **Qwen3-Embedding-8B**: State-of-the-art code embeddings (#1 MTEB rank)  
-✅ **Qdrant**: Fast, efficient vector database  
-✅ **1024 dimensions**: Optimal quality/performance balance  
-✅ **Local setup**: Complete privacy, no API costs  
-✅ **GPU-accelerated**: Fast indexing and search  
+✅ **Qwen3-Embedding-8B**: State-of-the-art code embeddings (#1 MTEB rank)
+✅ **Qdrant**: Fast, efficient vector database
+✅ **4096 dimensions**: Maximum quality (Qwen3-8B output)
+✅ **Local setup**: Complete privacy, no API costs
+✅ **GPU-accelerated**: Fast indexing and search
 
 **Your setup delivers:**
-- ~100ms search latency
-- 98-99% top-10 accuracy
-- ~$50/year electricity cost
+- Fast local search (milliseconds)
+- High retrieval accuracy
+- Minimal ongoing electricity costs
 - Unlimited searches with no rate limits
 
 **Architecture:**

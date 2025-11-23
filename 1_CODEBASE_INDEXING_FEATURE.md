@@ -1,8 +1,8 @@
-# KiloCode Codebase Indexing Documentation
+# Codebase Indexing Feature
 
 ## Overview
 
-Codebase Indexing enables semantic code search across your entire project using AI embeddings. Instead of searching for exact text matches, it understands the meaning of your queries, helping Kilo Code find relevant code even when you don't know specific function names or file locations.
+Codebase Indexing enables semantic code search across your entire project using AI embeddings. Instead of searching for exact text matches, it understands the meaning of your queries, helping KiloCode find relevant code even when you don't know specific function names or file locations.
 
 ## Codebase Indexing Settings
 

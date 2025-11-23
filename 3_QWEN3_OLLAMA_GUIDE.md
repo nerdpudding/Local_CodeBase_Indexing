@@ -1,7 +1,7 @@
-# Qwen3-Embedding Modelfile Configuration Guide
+# Qwen3-Embedding with Ollama: Guide & FAQ
 
-**Date**: November 23, 2025  
-**Project**: KiloCode Codebase Indexing  
+**Date**: November 23, 2025
+**Project**: KiloCode Codebase Indexing
 **Model**: qwen3-embedding:8b-fp16
 
 ---
@@ -9,6 +9,20 @@
 ## Executive Summary
 
 **The default Ollama modelfile for qwen3-embedding:8b-fp16 requires NO modification.** Unlike text generation models, embedding models don't use parameters like temperature, top_p, or num_ctx. The minimal default modelfile is exactly what's needed for optimal performance.
+
+---
+
+## Table of Contents
+
+1. [Understanding the Default Modelfile](#understanding-the-default-modelfile)
+2. [Why Embedding Models Are Different](#why-embedding-models-are-different)
+3. [What Ollama Handles Automatically](#what-ollama-handles-automatically)
+4. [What NOT to Add to the Modelfile](#what-not-to-add-to-the-modelfile)
+5. [Context Window Details](#context-window-details)
+6. [Dimension Configuration](#dimension-configuration-matryoshka-support)
+7. [Common Questions (FAQ)](#common-questions)
+8. [Summary and Best Practices](#summary-and-best-practices)
+9. [References](#references)
 
 ---
 
@@ -75,7 +89,7 @@ PARAMETER stop "<|endoftext|>"  # Stop sequences
 **Process**:
 1. Takes input text
 2. Processes through neural network layers
-3. Outputs fixed-size vector (e.g., 1024 dimensions)
+3. Outputs fixed-size vector (e.g., 4096 dimensions)
 4. Same input ALWAYS produces same output
 
 **No sampling, no randomness, no generation** = no need for those parameters.
@@ -179,7 +193,7 @@ You can't change it via modelfile, and you don't need to - it's already optimal.
 
 ### Default Behavior
 
-Qwen3-Embedding-8B outputs **1024 dimensions** by default when used through Ollama's API:
+Qwen3-Embedding-8B outputs **4096 dimensions** by default when used through Ollama's API:
 
 ```bash
 curl http://localhost:11434/api/embeddings -d '{
@@ -187,16 +201,16 @@ curl http://localhost:11434/api/embeddings -d '{
   "prompt": "test"
 }'
 
-# Returns: array of 1024 floats
+# Returns: array of 4096 floats
 ```
 
-### Why 1024 is Optimal
+### Why 4096 is the Default
 
-As detailed in the main setup report:
-- 98-99% of maximum quality (vs 4096 dims)
-- 4× less storage than full dimensions
-- Faster search performance
-- Industry standard for production code search
+This provides:
+- 100% maximum model quality (no truncation)
+- No configuration needed (works out of the box)
+- Simplicity over optimization
+- Best accuracy for code search tasks
 
 ### Changing Dimensions (If Needed)
 
@@ -214,124 +228,6 @@ curl http://localhost:11434/api/embeddings -d '{
 ```
 
 **For KiloCode**: The dimension setting goes in KiloCode's configuration UI, not in the Ollama modelfile.
-
----
-
-## Verification and Testing
-
-### Test 1: Verify Model is Loaded
-
-```bash
-# Check model exists
-docker exec ollama ollama list | grep qwen3
-
-# Expected output:
-# qwen3-embedding:8b-fp16    <hash>    15 GB    <timestamp>
-```
-
-### Test 2: Generate Test Embedding
-
-```bash
-# Generate embedding for a code snippet
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "qwen3-embedding:8b-fp16",
-  "prompt": "def fibonacci(n): return n if n <= 1 else fibonacci(n-1) + fibonacci(n-2)"
-}'
-```
-
-**Expected Response**:
-```json
-{
-  "model": "qwen3-embedding:8b-fp16",
-  "embeddings": [[
-    0.0234, -0.0156, 0.0891, ..., 0.0445
-  ]],
-  "total_duration": 145231234,
-  "load_duration": 1234567,
-  "prompt_eval_count": 23
-}
-```
-
-**Validation Checklist**:
-- ✅ Response status: 200 OK
-- ✅ Embeddings array has exactly 1024 numbers
-- ✅ All numbers are floats between -1 and 1
-- ✅ Total duration < 500ms (typical for single embedding)
-
-### Test 3: Verify Determinism
-
-```bash
-# Generate same embedding twice
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "qwen3-embedding:8b-fp16",
-  "prompt": "hello world"
-}' > embedding1.json
-
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "qwen3-embedding:8b-fp16",
-  "prompt": "hello world"
-}' > embedding2.json
-
-# Compare (should be identical)
-diff embedding1.json embedding2.json
-```
-
-**Expected**: No differences. Same input = same output, always.
-
-### Test 4: Check VRAM Usage
-
-```bash
-# Monitor GPU memory
-nvidia-smi
-
-# With model loaded, expect:
-# GPU 0 (RTX 4090): ~15GB used by Ollama
-```
-
----
-
-## KiloCode Configuration
-
-### Settings to Use
-
-In KiloCode's "Codebase Indexing" settings:
-
-```yaml
-Enable Codebase Indexing: ✅ ON
-
-Embedding Provider:
-  Provider: Ollama
-  Base URL: http://localhost:11434
-  Model: qwen3-embedding:8b-fp16    # ← Must match exactly
-  Dimensions: 1024                   # ← Optional, auto-detected
-
-Vector Database:
-  Provider: Qdrant
-  URL: http://localhost:6333
-  API Key: (leave empty for local)
-  Collection Name: kilocode_codebase
-  
-Search Settings:
-  Max Search Results: 20
-  Min Block Size: 100 chars
-  Max Block Size: 1000 chars
-```
-
-### Critical Points
-
-1. **Model Name Must Match**: `qwen3-embedding:8b-fp16`
-   - KiloCode passes this exact string to Ollama
-   - Case-sensitive
-   - Must include the `:8b-fp16` tag
-
-2. **Dimensions Are Auto-Detected**: 
-   - KiloCode will query the model and detect 1024 dimensions
-   - You can explicitly set to 1024 for clarity
-   - Don't set to other values unless you know what you're doing
-
-3. **No API Key Needed**:
-   - Ollama runs locally without authentication
-   - Only set API key if you've added authentication to Ollama (rare)
 
 ---
 
@@ -389,70 +285,6 @@ The embedding model modelfile is shorter because it does **one thing well**: con
 
 ---
 
-## Troubleshooting
-
-### Issue: "Model not found" error
-
-**Solution**: Verify model name exactly matches
-```bash
-# Check available models
-docker exec ollama ollama list
-
-# Should see: qwen3-embedding:8b-fp16
-```
-
-If missing, pull again:
-```bash
-docker exec ollama ollama pull qwen3-embedding:8b-fp16
-```
-
-### Issue: Embedding dimension is not 1024
-
-**Possible causes**:
-1. Using a different tag (e.g., `:8b` instead of `:8b-fp16`)
-2. Explicitly requesting different dimensions in API call
-3. Using wrong model (e.g., `qwen3-embedding:4b`)
-
-**Solution**: Verify with test embedding (Test 2 above)
-
-### Issue: Very slow embedding generation (>1 second per embedding)
-
-**Possible causes**:
-1. Model not using GPU (offloading to CPU)
-2. Other processes using VRAM
-3. Model being loaded/unloaded repeatedly
-
-**Diagnosis**:
-```bash
-# Check GPU usage during embedding generation
-watch -n 1 nvidia-smi
-
-# Check Ollama logs
-docker logs ollama --tail 100 --follow
-```
-
-**Expected**: GPU utilization spike during embedding, ~50-100ms per embedding
-
-### Issue: KiloCode can't connect to Ollama
-
-**Common causes**:
-1. Wrong URL (should be `http://localhost:11434`)
-2. Ollama container not running
-3. Port not mapped correctly
-
-**Solution**:
-```bash
-# Check Ollama is running
-docker ps | grep ollama
-
-# Verify endpoint responds
-curl http://localhost:11434/api/tags
-
-# Should return list of models
-```
-
----
-
 ## Summary and Best Practices
 
 ### ✅ Do This
@@ -482,12 +314,12 @@ curl http://localhost:11434/api/tags
 - **Ollama Embedding Documentation**: https://ollama.com/blog/embedding-models
 - **Ollama API Reference**: https://github.com/ollama/ollama/blob/main/docs/api.md
 - **Qwen3-Embedding Official Docs**: https://ollama.com/library/qwen3-embedding
-- **Project Setup Report**: `qwen3-embedding-kilocode-setup-report.md`
-- **KiloCode Indexing Docs**: `kilocode-codebase-indexing-docs.md`
+- **Qwen3-Embedding GitHub**: https://github.com/QwenLM/Qwen3-Embedding
+- **Related Documentation**: [2_EMBEDDING_MODEL_SELECTION.md](2_EMBEDDING_MODEL_SELECTION.md), [1_CODEBASE_INDEXING_FEATURE.md](1_CODEBASE_INDEXING_FEATURE.md)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: November 23, 2025  
-**Author**: AI Implementation Guide  
-**Status**: Verified and Production-Ready
+**Document Version**: 2.0
+**Last Updated**: November 23, 2025
+**Purpose**: Configuration Guide & FAQ
+**Status**: Verified Configuration

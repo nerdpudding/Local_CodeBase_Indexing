@@ -138,7 +138,7 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 ### Trade-offs
 
 ⚠️ **Initial setup** - ~30 minutes to configure (one-time)
-⚠️ **Indexing time** - 10-20 minutes per project (one-time, auto-updates after)
+⚠️ **Indexing time** - Varies by project size (one-time, auto-updates after)
 ⚠️ **Storage** - ~160MB per 10K code blocks
 ⚠️ **GPU required** - Needs RTX 4090 or similar (15GB VRAM)
 
@@ -171,7 +171,7 @@ LLM (with YOUR code context)
 ### Why Local?
 
 - **Privacy:** Code never leaves your machine
-- **Cost:** ~$50/year electricity vs $12-200/year for cloud APIs
+- **Cost:** Minimal ongoing electricity costs vs per-usage cloud API fees
 - **Performance:** No network latency, no rate limits
 - **Control:** Your hardware, your rules
 - **No vendor lock-in:** Works offline, independent of cloud services
@@ -181,7 +181,7 @@ LLM (with YOUR code context)
 | Component | Technology | Specification |
 |-----------|-----------|---------------|
 | **Embedding Model** | Qwen3-Embedding-8B-FP16 | #1 MTEB ranked (80.68 code, 70.58 ML) |
-| **Dimensions** | 1024 | 98-99% quality, optimal balance |
+| **Dimensions** | 4096 | 100% quality, Qwen3-8B via Ollama output |
 | **Vector Database** | Qdrant | Cosine similarity, local deployment |
 | **AI Runtime** | Ollama | Docker-based, GPU accelerated |
 | **Code Parser** | Tree-sitter | AST-based semantic blocks |
@@ -191,9 +191,9 @@ LLM (with YOUR code context)
 ## Key Features
 
 ### Performance
-- **Search Latency:** ~100ms total (50-100ms embedding + 10-20ms vector search)
-- **Indexing Speed:** 10-20 minutes for typical 5K-10K code blocks
-- **Accuracy:** 98-99% top-10 retrieval accuracy
+- **Search Latency:** Fast local search (milliseconds)
+- **Indexing Speed:** Varies by codebase size (minutes to hours for initial indexing)
+- **Accuracy:** High top-10 retrieval accuracy
 - **Context Window:** 32K tokens (handle large functions/files)
 
 ### Capabilities
@@ -207,8 +207,8 @@ LLM (with YOUR code context)
 ### Resource Usage
 - **Model VRAM:** ~15GB FP16 (maximum quality)
 - **Qdrant RAM:** ~60-100MB for typical codebase
-- **Storage:** ~40MB vectors for 10K code blocks (1024 dims)
-- **Throughput:** ~50-100 vectors/second
+- **Storage:** ~160MB vectors for 10K code blocks (4096 dims)
+- **Throughput:** GPU-accelerated embedding generation
 
 ## Why Qwen3-Embedding-8B?
 
@@ -220,18 +220,18 @@ After evaluating 9 embedding models, Qwen3-Embedding-8B was selected for:
 4. **Advanced features** - Instruction-aware, Matryoshka support, 32K context
 5. **Future-proof** - Latest release (June 2025), Apache 2.0 license
 
-See [qwen3-embedding-kilocode-setup-report.md](qwen3-embedding-kilocode-setup-report.md) for detailed comparison.
+See [2_EMBEDDING_MODEL_SELECTION.md](2_EMBEDDING_MODEL_SELECTION.md) for detailed comparison.
 
 ## Why 4096 Dimensions?
 
-Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but Ollama outputs **4096 by default**:
+Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but **Qwen3-8B via Ollama outputs 4096**:
 
 - **Quality:** 100% maximum performance (no quality loss)
 - **Simplicity:** No configuration needed, works out of the box
-- **Speed:** Still fast (~20-30ms search on RTX 4090)
+- **Speed:** Fast search with GPU acceleration
 - **Storage:** ~160MB for 10K blocks (acceptable with local setup)
 
-**Note:** While 1024 dimensions would be more storage-efficient (98-99% quality), using the 4096 default eliminates configuration complexity and provides maximum quality for local deployments.
+**Note:** While 1024 dimensions would be more storage-efficient (98-99% quality), using the model's 4096 output as-is eliminates configuration complexity and provides maximum quality for local deployments.
 
 | Dimensions | Quality | Use Case |
 |------------|---------|----------|
@@ -241,7 +241,7 @@ Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but Ollama outputs **
 | 2048 | ~99.7% | Specialized domains |
 | **4096** | **100%** | **This project (model default)** |
 
-**Note:** While the model supports Matryoshka embeddings (configurable dimensions), Ollama's default implementation outputs **4096 dimensions**. This provides maximum quality with no configuration needed.
+**Note:** While the model supports Matryoshka embeddings (configurable dimensions), when using Qwen3-Embedding-8B-FP16 through Ollama it outputs **4096 dimensions**. This provides maximum quality with no configuration needed.
 
 ## Prerequisites
 
@@ -303,7 +303,7 @@ Dashboard available at: http://localhost:6333/dashboard
    - **Model dimension:** 4096
    - **Qdrant URL:** http://localhost:6333
    - **Qdrant API key:** (leave empty for local)
-   - **Max Results:** 50 (recommended for code search)
+   - **Max Results:** 50 (adjustable based on your needs)
    - **Search score threshold:** 0.40 (default)
 
 ### 4. Start Indexing
@@ -315,7 +315,7 @@ Dashboard available at: http://localhost:6333/dashboard
    - Generate embeddings via Ollama
    - Store vectors in Qdrant
 4. Watch status: Gray → Yellow (indexing) → Green (ready)
-5. Indexing time: ~10-20 minutes for typical project
+5. Indexing time: Varies by project size (GPU-accelerated)
 
 ### 5. Search!
 ```
@@ -328,14 +328,16 @@ Natural language queries in KiloCode:
 
 ## Documentation
 
-This repository contains comprehensive documentation:
+This repository contains comprehensive documentation organized by workflow:
 
 | Document | Description |
 |----------|-------------|
-| [qwen3-embedding-kilocode-setup-report.md](qwen3-embedding-kilocode-setup-report.md) | **Research Report** - Detailed comparison of 9 embedding models, why Qwen3-8B was selected, dimension analysis, cost comparison |
-| [qwen3-embedding-modelfile-configuration.md](qwen3-embedding-modelfile-configuration.md) | **Modelfile Configuration** - Why the default Ollama modelfile needs NO modification, embedding vs generation models explained |
-| [qdrant-setup-guide.md](qdrant-setup-guide.md) | **Qdrant Setup** - Step-by-step Docker Compose deployment, configuration, integration with ollama-network, performance tuning |
-| [kilocode-codebase-indexing-docs.md](kilocode-codebase-indexing-docs.md) | **KiloCode Integration** - Official documentation for codebase indexing feature, settings, search capabilities, limitations |
+| [1_CODEBASE_INDEXING_FEATURE.md](1_CODEBASE_INDEXING_FEATURE.md) | **Codebase Indexing Feature** - Overview of the codebase indexing feature from official KiloCode documentation |
+| [2_EMBEDDING_MODEL_SELECTION.md](2_EMBEDDING_MODEL_SELECTION.md) | **Embedding Model Selection** - Research and comparison of 9 embedding models, why Qwen3-8B was chosen |
+| [3_QWEN3_OLLAMA_GUIDE.md](3_QWEN3_OLLAMA_GUIDE.md) | **Qwen3 with Ollama Guide** - Why the default configuration is perfect, FAQ, and best practices |
+| [4_QDRANT_INSTALLATION_GUIDE.md](4_QDRANT_INSTALLATION_GUIDE.md) | **Qdrant Installation** - Step-by-step Docker Compose deployment, configuration, integration with ollama-network |
+| [FAQ.md](FAQ.md) | **Frequently Asked Questions** - Quick reference for understanding RAG, collections, vectors, and workflow |
+| [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) | **Lessons Learned** - Real-world implementation notes, key discoveries, troubleshooting tips |
 
 ## Architecture
 
@@ -346,7 +348,7 @@ Code Files
 Semantic Blocks (functions, classes, methods)
   ↓ (Ollama API call)
 Qwen3-Embedding-8B-FP16
-  ↓ (1024-dim vectors)
+  ↓ (4096-dim vectors)
 Qdrant Collection (kilocode_codebase)
   ↓ (Persistent storage)
 Indexed Codebase
@@ -356,7 +358,7 @@ Indexed Codebase
 ```
 Natural Language Query
   ↓ (KiloCode API)
-Ollama Embedding (query → 1024-dim vector)
+Ollama Embedding (query → 4096-dim vector)
   ↓ (Similarity search)
 Qdrant Cosine Matching
   ↓ (Top-N results)
@@ -387,14 +389,14 @@ Qdrant → qdrant:11434 → Ollama (internal)
 # Model: qwen3-embedding:8b-fp16
 # No custom modelfile needed - use default
 # Context: 32K tokens (built-in)
-# Output: 1024 dimensions (API configured)
+# Output: 4096 dimensions (Qwen3-8B via Ollama)
 # Quantization: FP16 for maximum quality
 ```
 
 ### Qdrant Collection Settings
 ```
 Collection Name: kilocode_codebase
-Vector Dimensions: 1024
+Vector Dimensions: 4096
 Distance Metric: Cosine
 Indexing: HNSW (Hierarchical Navigable Small World)
 ```
@@ -404,7 +406,7 @@ Indexing: HNSW (Hierarchical Navigable Small World)
 Embedding Provider: Ollama
 Model: qwen3-embedding:8b-fp16
 Qdrant URL: http://localhost:6333
-Max Search Results: 20
+Max Search Results: 50
 Min Block Size: 100 chars
 Max Block Size: 1000 chars
 ```
@@ -412,17 +414,19 @@ Max Block Size: 1000 chars
 ## Performance Expectations
 
 ### Indexing Performance
-| Codebase Size | Blocks | Time | VRAM | Storage |
-|---------------|--------|------|------|---------|
-| Small (1K files) | ~5K | 10 min | 15GB | 20MB |
-| Medium (5K files) | ~25K | 45 min | 15GB | 100MB |
-| Large (10K files) | ~50K | 90 min | 15GB | 200MB |
+| Codebase Size | Blocks | VRAM | Storage |
+|---------------|--------|------|---------|
+| Small (1K files) | ~5K | 15GB | 20MB |
+| Medium (5K files) | ~25K | 15GB | 100MB |
+| Large (10K files) | ~50K | 15GB | 200MB |
+
+**Indexing Time:** Varies by project size and hardware. GPU-accelerated embedding generation is the bottleneck. Initial indexing may take minutes to hours depending on codebase size.
 
 ### Search Performance
-- **Embedding Generation:** 50-100ms (Ollama)
-- **Vector Search:** 10-20ms (Qdrant)
-- **Total Latency:** ~100ms
-- **Accuracy:** 98-99% top-10 retrieval
+- **Search Latency:** Fast local search in milliseconds
+- **Embedding Generation:** GPU-accelerated (Ollama)
+- **Vector Search:** Fast similarity matching (Qdrant)
+- **Accuracy:** High top-10 retrieval accuracy
 
 ### Resource Monitoring
 ```bash
@@ -440,32 +444,29 @@ curl http://localhost:6333/collections/kilocode_codebase
 
 ### Local Setup (This Project)
 - **Hardware:** One-time (already owned RTX 4090)
-- **Electricity:** ~$50/year (GPU running intermittently)
-- **Total Year 1:** ~$50
+- **Electricity:** Ongoing cost (GPU running intermittently, varies by local rates and usage)
+- **Per-query cost:** Effectively $0 (unlimited)
 
 ### Cloud API Alternative
-- **OpenAI text-embedding-3-small:** $0.02/1M tokens
-  - Light usage (10K queries/month): ~$12/year
-  - Heavy usage (100K queries/month): ~$120/year
+- **Pricing model:** Per-token/per-query charges
+- **Usage costs:** Scale with usage (light to heavy)
 - **Rate limits:** Applied
 - **Privacy:** Code sent to cloud
 
-**Winner:** Local setup - unlimited queries, complete privacy, minimal cost
+**Winner:** Local setup - unlimited queries, complete privacy, minimal ongoing costs vs per-usage cloud fees
 
 ## Project Status
 
 ### ✅ Completed
 - Research and model selection (Qwen3-Embedding-8B)
 - Architecture design
-- Documentation (4 comprehensive guides)
+- Documentation (comprehensive guides)
+- Docker Compose file for Qdrant
+- Qdrant deployment and configuration
+- KiloCode integration and testing
 - Hardware compatibility verification
-- Performance benchmarking
-
-### 🚧 Next Steps
-1. Create Docker Compose file for Qdrant
-2. Deploy and configure Qdrant vector database
-3. Test KiloCode integration
-4. Create initialization scripts (optional)
+- Performance validation
+- Implementation documentation
 
 ### 🔮 Future Enhancements
 - Automatic backup/restore scripts
@@ -483,7 +484,7 @@ curl http://localhost:6333/collections/kilocode_codebase
 - Check Docker resources
 
 **Q: Search returns poor results**
-- Verify 1024 dimensions configured
+- Verify 4096 dimensions configured
 - Check collection exists: `curl localhost:6333/collections`
 - Rebuild index in KiloCode settings
 
@@ -526,4 +527,4 @@ This is a personal project documenting a local setup. Feel free to:
 
 ---
 
-**Ready to get started?** Follow the [qdrant-setup-guide.md](qdrant-setup-guide.md) for step-by-step deployment instructions.
+**Ready to get started?** Follow the [4_QDRANT_INSTALLATION_GUIDE.md](4_QDRANT_INSTALLATION_GUIDE.md) for step-by-step deployment instructions.

@@ -81,7 +81,7 @@ LLM says: *"Your project uses a custom ErrorHandler middleware in `src/middlewar
 
 ⚠️ **Initial Setup Time** - ~30 minutes to configure everything (one-time)
 
-⚠️ **Indexing Wait** - 10-20 minutes per project for initial index (auto-updates after)
+⚠️ **Indexing Wait** - Varies by project size for initial index (auto-updates after)
 
 ⚠️ **Storage Requirements** - ~160MB per 10,000 code blocks
 
@@ -115,7 +115,7 @@ LLM says: *"Your project uses a custom ErrorHandler middleware in `src/middlewar
 ### What is a collection and why do we need it?
 
 A **collection** is like a database table, but for vectors (embeddings). It stores:
-- The 1024-number vectors from your code embeddings
+- The 4096-number vectors from your code embeddings
 - Metadata (file path, line numbers, code snippet text)
 
 You need it because Qdrant needs a structured place to store and search your code embeddings efficiently.
@@ -149,14 +149,14 @@ Think of it like **resolution** or **detail level** for your code embeddings.
 
 - Each code snippet becomes a vector of numbers
 - More dimensions = more detail = better accuracy
-- **Qwen3 via Ollama outputs 4096 dimensions by default**
+- **Qwen3-Embedding-8B-FP16 via Ollama outputs 4096 dimensions**
 - Qdrant needs to know "expect 4096 numbers per vector" to store them correctly
 
 **Analogy:** Like telling a photo app "all images will be 3840x2160" - Qdrant needs to know the vector "size" upfront.
 
-**For this project:** Use **4096** (Ollama's default output for Qwen3-Embedding-8B)
+**For this project:** Use **4096** (what Qwen3-Embedding-8B outputs via Ollama)
 
-**Note:** While Qwen3 supports Matryoshka embeddings (configurable 32-4096 dimensions), Ollama's implementation defaults to the full 4096 for maximum quality. This requires no configuration and provides 100% model performance.
+**Note:** While Qwen3 supports Matryoshka embeddings (configurable 32-4096 dimensions), when using this model through Ollama it outputs the full 4096 for maximum quality. This requires no configuration and provides 100% model performance.
 
 ---
 
@@ -188,7 +188,7 @@ Think of it like **resolution** or **detail level** for your code embeddings.
 
 1. **Create collection** (one-time per project)
    - Collection name: `my_project_name`
-   - Vector size: 1024
+   - Vector size: 4096
    - Distance: Cosine
 
 2. **Configure KiloCode** (one-time per project)
@@ -236,8 +236,8 @@ Think of it like **resolution** or **detail level** for your code embeddings.
 - Efficient partial updates (fast, ~seconds)
 
 **Performance:**
-- Initial index: 10-20 minutes (5K-10K code blocks)
-- Updates: Seconds to minutes (only changed files)
+- Initial index: Varies by codebase size (GPU-accelerated)
+- Updates: Fast (only changed files)
 
 ---
 
@@ -416,12 +416,12 @@ curl -X PUT http://localhost:6333/collections/your_project_name \
 **Why:**
 - Collections are just indexes (can be rebuilt)
 - Source code is the source of truth
-- Re-indexing takes 10-20 minutes (not a big deal)
+- Re-indexing is reasonably fast with GPU acceleration
 
 **However, if you want to backup:**
 - Collections are stored in Docker volume: `qdrant_storage`
 - Can create snapshots via Qdrant API
-- Useful for very large codebases (hours to index)
+- Useful for very large codebases (time-consuming to re-index)
 
 ---
 
@@ -472,7 +472,7 @@ curl -X PUT http://localhost:6333/collections/your_project_name \
    - **Model dimension:** `4096`
    - **Qdrant URL:** `http://localhost:6333`
    - **Qdrant API key:** (leave empty for local)
-   - **Max Results:** `50` (recommended for code, 20-25 for docs)
+   - **Max Results:** `50` (adjustable based on your needs)
    - **Search score threshold:** `0.40` (default)
 3. Click **Save**
 4. Click **Start Indexing** (collection auto-created)
@@ -489,7 +489,7 @@ KiloCode Extension
 Code Blocks (functions, classes)
     ↓ (Ollama API)
 Qwen3-Embedding-8B-FP16
-    ↓ (1024-dim vectors)
+    ↓ (4096-dim vectors)
 Qdrant Collection
     ↓ (Cosine similarity search)
 Search Results (relevant code snippets)
@@ -515,6 +515,9 @@ Search Results (relevant code snippets)
 ---
 
 **Need more help?** Check the detailed guides:
-- [qdrant-setup-guide.md](qdrant-setup-guide.md) - Step-by-step Qdrant deployment
-- [kilocode-codebase-indexing-docs.md](kilocode-codebase-indexing-docs.md) - KiloCode feature documentation
-- [qwen3-embedding-kilocode-setup-report.md](qwen3-embedding-kilocode-setup-report.md) - Why Qwen3 and technical details
+- [README.md](README.md) - Project overview and quick start guide
+- [1_CODEBASE_INDEXING_FEATURE.md](1_CODEBASE_INDEXING_FEATURE.md) - Codebase indexing feature documentation
+- [2_EMBEDDING_MODEL_SELECTION.md](2_EMBEDDING_MODEL_SELECTION.md) - Embedding model selection and research
+- [3_QWEN3_OLLAMA_GUIDE.md](3_QWEN3_OLLAMA_GUIDE.md) - Qwen3 with Ollama guide and FAQ
+- [4_QDRANT_INSTALLATION_GUIDE.md](4_QDRANT_INSTALLATION_GUIDE.md) - Step-by-step Qdrant deployment
+- [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) - Lessons learned from actual setup
