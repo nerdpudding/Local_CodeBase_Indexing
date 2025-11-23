@@ -13,7 +13,7 @@ This document details the research and analysis conducted to select the optimal 
 
 **Research Findings**:
 - **Top Model**: Qwen3-Embedding-8B-FP16
-- **MTEB Ranking**: #1 for both Multilingual (70.58) and Code (80.68)
+- **MTEB Ranking**: #3 on Multilingual leaderboard (70.58), excellent Code performance (80.68); SOTA for consumer GPUs - top-ranked models require 44GB+ VRAM (as of November 2025)
 - **Dimensions**: 4096 (model's native output via Ollama)
 - **Quantization**: FP16 recommended for maximum quality
 - **Hardware Requirements**: ~15GB VRAM (fits RTX 4090/similar GPUs)
@@ -40,7 +40,7 @@ This document details the research and analysis conducted to select the optimal 
 
 | Model | Parameters | Dimensions | VRAM (Q8) | MTEB Score | Key Strengths |
 |-------|-----------|------------|-----------|------------|---------------|
-| **qwen3-embedding:8b** | 8B | 1024-4096* | ~9GB | **70.58** (ML) / **80.68** (Code) | #1 MTEB rank, code-optimized |
+| **qwen3-embedding:8b** | 8B | 1024-4096* | ~9GB | **70.58** (ML) / **80.68** (Code) | SOTA for consumer GPUs, code-optimized |
 | qwen3-embedding:4b | 4B | 1024-2560* | ~4.5GB | ~69 (ML) / ~78 (Code) | Good balance |
 | qwen3-embedding:0.6b | 0.6B | 1024* | ~0.7GB | ~65 (ML) / ~75 (Code) | Very efficient |
 | mxbai-embed-large | 335M | 1024 | ~1.5GB | 64.68 | Beats OpenAI-3-large |
@@ -79,7 +79,7 @@ This document details the research and analysis conducted to select the optimal 
 **MTEB Code Retrieval Scores** (as of November 2025):
 
 ```
-Qwen3-Embedding-8B:        80.68 ⭐ #1
+Qwen3-Embedding-8B:        80.68 ⭐ Excellent
 Qwen3-Embedding-4B:        ~78
 Voyage Code 3:             ~77
 OpenAI text-embedding-3:   ~75
@@ -88,10 +88,12 @@ mxbai-embed-large:         ~72 (general, not code-specific)
 nomic-embed-text:          ~70 (general, not code-specific)
 ```
 
-**MTEB Multilingual Scores**:
+**MTEB Multilingual Scores** (as of November 2025):
 
 ```
-Qwen3-Embedding-8B:        70.58 ⭐ #1
+KaLM-Embedding-Gemma3-12B: 72.32 (#1, but 44GB VRAM - impractical for consumer GPUs)
+llama-embed-nemotron-8b:   69.46 (#2)
+Qwen3-Embedding-8B:        70.58 ⭐ #3 (SOTA for consumer GPUs, ~15GB VRAM)
 Qwen3-Embedding-4B:        ~69
 Google Gemini Embedding:   ~68
 BGE-M3:                    ~66
@@ -107,10 +109,10 @@ nomic-embed-text v1.5:     62.39
 
 **Decision Rationale**:
 
-1. **Best-in-Class Performance**
-   - Ranks #1 on MTEB Multilingual leaderboard (70.58)
-   - Ranks #1 on MTEB Code benchmark (80.68)
-   - Beats all open-source and most proprietary models
+1. **SOTA Performance for Consumer GPUs**
+   - Ranks #3 on MTEB Multilingual leaderboard (70.58); top-ranked models require 44GB+ VRAM, impractical for consumer hardware
+   - Excellent Code benchmark performance (80.68)
+   - Best accessible model for consumer GPUs (16GB-24GB VRAM)
    - Released June 2025 - most recent training data
 
 2. **Code-Optimized Training**
@@ -344,7 +346,7 @@ RTX 5070ti (16GB Total):
 ### Trade-offs
 
 **Local Advantages**:
-- ✅ Best quality (Qwen3-8B outperforms cloud alternatives on MTEB)
+- ✅ Excellent quality (Qwen3-8B outperforms common cloud APIs like OpenAI and Voyage on MTEB)
 - ✅ Complete privacy (code never leaves your machine)
 - ✅ No per-query costs (unlimited usage)
 - ✅ No rate limits

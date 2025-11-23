@@ -27,8 +27,9 @@ A complete local setup for intelligent codebase indexing using Ollama, Qwen3 emb
 
 ### Getting Started
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
 - [My Docker Setup](#my-docker-setup-reference-only)
+- [Verification](#verification)
+- [Quick Start](#quick-start)
 
 ### Reference
 - [Documentation](#documentation)
@@ -102,17 +103,27 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 
 ### How RAG Works (Conceptual Overview)
 
-RAG works in three simple steps:
+RAG (Retrieval Augmented Generation) is a simple three-step pattern:
 
-1. **Index Once** - Parse your codebase, convert semantic blocks (functions, classes) into vector embeddings, store in Qdrant
-2. **Auto-Update** - File watcher detects changes, automatically re-indexes modified files only (fast, incremental)
-3. **Search Instantly** - When you ask a question, convert query to vector, find similar code via semantic search, inject into LLM context
+1. **Prepare Knowledge** - Break your documents into chunks, convert each chunk into a mathematical representation (vector), store in a database
+2. **Find Relevant Information** - Convert your question into a vector, find chunks with similar vectors (semantic similarity)
+3. **Generate Answer** - Give the AI model ONLY the relevant chunks as context, let it generate an accurate answer
 
-**The magic:** Instead of reading files randomly, the system performs semantic search to find ONLY the relevant code snippets. Your question "how does auth work?" instantly retrieves authentication-related functions across the entire codebase, then feeds them to the LLM for accurate answers.
+**The key insight:** Instead of an AI model reading everything or guessing based on training data, it first retrieves ONLY the relevant information, then generates answers grounded in that specific context.
+
+**Why vectors work:** Converting text to vectors captures meaning. "authentication" and "user verification" have similar vectors even though the words are different. This is why semantic search finds relevant code regardless of naming conventions.
+
+*Simplified example:* Imagine each word as a point in space with coordinates. Words with similar meanings end up close together: "king" might be at [0.8, 0.3, 0.1] and "queen" at [0.8, 0.3, 0.2] - they're nearby. Meanwhile "banana" at [0.1, 0.9, 0.5] is far away. The computer calculates distances between these points to find similarity. Real vectors have thousands of dimensions (not just 3), but the principle is the same - similar meanings = nearby points.
+
+**Real-world example:** When you ask "how does auth work?", the system:
+- Converts your question to a vector
+- Finds all code chunks with similar vectors (auth functions, login logic, token handling)
+- Feeds those specific chunks to the AI
+- AI answers based on YOUR actual code, not generic patterns
 
 **This is production-grade RAG** - the same technology behind ChatGPT's "custom GPTs" and enterprise AI assistants, but 100% local.
 
-**For detailed technical flows with KiloCode orchestration:** See [Architecture](#architecture) section below (Initial Indexing, Auto-Update, and Search flows).
+**For this project's specific implementation:** See [Architecture](#architecture) section below for how KiloCode, Ollama, Qwen3, and Qdrant work together.
 
 ---
 
@@ -130,7 +141,7 @@ RAG works in three simple steps:
 
 | Component | Technology | Specification |
 |-----------|-----------|---------------|
-| **Embedding Model** | Qwen3-Embedding-8B-FP16 | #1 MTEB ranked (80.68 code, 70.58 ML) |
+| **Embedding Model** | Qwen3-Embedding-8B-FP16 | SOTA for consumer GPUs (80.68 code, 70.58 ML on MTEB) |
 | **Dimensions** | 4096 | 100% quality, Qwen3-8B via Ollama output |
 | **Vector Database** | Qdrant | Cosine similarity, local deployment |
 | **AI Runtime** | Ollama | Docker-based, GPU accelerated |
@@ -164,9 +175,9 @@ RAG works in three simple steps:
 
 After evaluating 9 embedding models, Qwen3-Embedding-8B was selected for:
 
-1. **Best-in-class performance** - #1 on MTEB Code benchmark
+1. **SOTA performance for consumer GPUs** - Ranked #3 (as of November 2025) on MTEB multilingual leaderboard (70.58 score, 80.68 on Code benchmark); top-ranked models require 44GB+ VRAM, impractical for consumer hardware 
 2. **Code-optimized training** - 100+ programming languages
-3. **Hardware compatibility** - 15GB fits in RTX 4090's 24GB VRAM
+3. **Hardware compatibility** - ~15GB VRAM fits in RTX 4090's 24GB (vs 44GB+ for higher-ranked models)
 4. **Advanced features** - Instruction-aware, Matryoshka support, 32K context
 5. **Future-proof** - Latest release (June 2025), Apache 2.0 license
 
@@ -191,7 +202,7 @@ Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but **Qwen3-8B via Ol
 | 2048 | ~99.7% | Specialized domains |
 | **4096** | **100%** | **This project (model default)** |
 
-**Note:** While the model supports Matryoshka embeddings (configurable dimensions), when using Qwen3-Embedding-8B-FP16 through Ollama it outputs **4096 dimensions**. This provides maximum quality with no configuration needed.
+**Note:** While the model supports Matryoshka embeddings (configurable dimensions), when using Qwen3-Embedding-8B-FP16 through Ollama it outputs **4096 dimensions**. This provides maximum quality with no extra configuration needed.
 
 ## Prerequisites
 
@@ -206,21 +217,58 @@ Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but **Qwen3-8B via Ol
 
 ### Software
 - **Docker & Docker Compose** - Container orchestration
-- **Ollama** - Already installed and running
+- **Ollama** - Local AI runtime for embeddings
 - **KiloCode Extension** - VS Code extension for codebase indexing
-- **Existing ollama-network** - Docker network (already configured)
 
-### Verification
+---
+
+## My Docker Setup (Reference Only)
+
+**Important:** This documentation is optimized for MY specific environment but designed as a reference for others to adapt.
+
+For context, here's how I run Ollama in Docker:
+
+```bash
+docker run -d \
+  --network ollama-network \
+  --gpus device=all \
+  -v ollama:/root/.ollama \
+  -p 11434:11434 \
+  --name ollama \
+  -e OLLAMA_FLASH_ATTENTION=1 \
+  -e OLLAMA_KV_CACHE_TYPE=q8_0 \
+  ollama/ollama
+```
+
+**Key parameters explained:**
+- `--network ollama-network`: **OPTIONAL** - My custom Docker network. You can omit this, use your own network, or run without one entirely.
+- `OLLAMA_FLASH_ATTENTION=1`: **Optional (recommended)** - Performance optimization for faster inference.
+- `OLLAMA_KV_CACHE_TYPE=q8_0`: **Optional** - Enables lower VRAM usage at minimal accuracy cost.
+
+**Adapt to your needs:** Don't blindly copy the network setting. Either remove it, use your existing Docker network, or create your own. The setup works perfectly fine without custom networks.
+
+For detailed Ollama configuration options, see the [official Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/docker.md).
+
+---
+
+## Verification
+
+Before starting, verify your environment:
+
 ```bash
 # Check Ollama is running
 docker ps | grep ollama
 
-# Verify ollama-network exists
-docker network ls | grep ollama-network
-
 # Confirm GPU is available
 nvidia-smi
+
+# (Optional) If using custom Docker network, verify it exists
+docker network ls | grep ollama-network
 ```
+
+**Note:** The `ollama-network` check is only needed if you're using a custom Docker network like in the setup above. If you're running Ollama without a custom network, skip that check.
+
+---
 
 ## Quick Start
 
@@ -275,35 +323,6 @@ Natural language queries in KiloCode:
 - "database connection setup"
 - "API endpoint definitions"
 ```
-
----
-
-## My Docker Setup (Reference Only)
-
-**Important:** This documentation is optimized for MY specific environment but designed as a reference for others to adapt.
-
-For context, here's how I run Ollama in Docker:
-
-```bash
-docker run -d \
-  --network ollama-network \
-  --gpus device=all \
-  -v ollama:/root/.ollama \
-  -p 11434:11434 \
-  --name ollama \
-  -e OLLAMA_FLASH_ATTENTION=1 \
-  -e OLLAMA_KV_CACHE_TYPE=q8_0 \
-  ollama/ollama
-```
-
-**Key parameters explained:**
-- `--network ollama-network`: **OPTIONAL** - My custom Docker network. You can omit this, use your own network, or run without one entirely.
-- `OLLAMA_FLASH_ATTENTION=1`: **Optional (recommended)** - Performance optimization for faster inference.
-- `OLLAMA_KV_CACHE_TYPE=q8_0`: **Optional** - Enables lower VRAM usage at minimal accuracy cost.
-
-**Adapt to your needs:** Don't blindly copy the network setting. Either remove it, use your existing Docker network, or create your own. The setup works perfectly fine without custom networks.
-
-For detailed Ollama configuration options, see the [official Ollama documentation](https://github.com/ollama/ollama/blob/main/docs/docker.md).
 
 ---
 

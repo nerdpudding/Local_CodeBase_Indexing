@@ -9,10 +9,10 @@
 
 ## Introduction
 
-This guide walks you through setting up Qdrant vector database to work with KiloCode's codebase indexing feature using the Qwen3-Embedding-8B model. We'll deploy Qdrant on the same Docker network as your existing Ollama installation, configure it for 4096-dimensional embeddings (what Qwen3-8B outputs via Ollama), and integrate it with KiloCode.
+This guide walks you through setting up Qdrant vector database to work with KiloCode's codebase indexing feature using the Qwen3-Embedding-8B model. We'll deploy Qdrant (optionally on the same Docker network as Ollama if using custom networks), configure it for 4096-dimensional embeddings (what Qwen3-8B outputs via Ollama), and integrate it with KiloCode.
 
 **Prerequisites:**
-- Ollama running in Docker on `ollama-network`
+- Ollama running (Docker or native installation)
 - Model `qwen3-embedding:8b-fp16` already pulled in Ollama
 - Docker and Docker Compose installed
 - Ubuntu Desktop with GPU access
@@ -21,7 +21,7 @@ This guide walks you through setting up Qdrant vector database to work with Kilo
 
 ## Table of Contents
 
-1. [Why Same Docker Network](#why-same-docker-network)
+1. [Docker Network Configuration (Optional)](#docker-network-configuration-optional)
 2. [Deploy Qdrant with Docker Compose](#deploy-qdrant-with-docker-compose)
 3. [Verify Qdrant is Running](#verify-qdrant-is-running)
 4. [Create the Collection](#create-the-collection)
@@ -35,16 +35,18 @@ This guide walks you through setting up Qdrant vector database to work with Kilo
 
 ---
 
-## Why Same Docker Network
+## Docker Network Configuration (Optional)
 
-Qdrant should be deployed on the same `ollama-network` as your Ollama container because:
+**If you're using a custom Docker network** (like `ollama-network` in my setup), deploying Qdrant on the same network provides benefits:
 
 - **Container-to-container communication**: Direct internal communication without host routing
 - **Name resolution**: Containers can reference each other by name (e.g., `http://qdrant:6333`)
 - **Security**: Internal network traffic doesn't expose ports unnecessarily
 - **Performance**: Slightly faster than localhost routing
 
-However, KiloCode (running on your host) will still use `localhost:6333` to connect to Qdrant.
+**However, this is entirely optional.** If you're running Ollama without a custom Docker network, simply omit the `networks` section from the docker-compose.yml below. Qdrant will work perfectly fine using localhost connections.
+
+**Note:** KiloCode (running on your host) will always use `localhost:6333` to connect to Qdrant, regardless of Docker network configuration.
 
 ---
 
@@ -84,13 +86,15 @@ volumes:
 **What each section does:**
 
 - **image**: Latest Qdrant version (~200MB download)
-- **networks**: Joins your existing `ollama-network`
-- **ports**: 
+- **networks**: *(Optional)* Joins your existing `ollama-network` if you use one; **omit this section entirely** if you don't use custom Docker networks
+- **ports**:
   - `6333`: HTTP API (for KiloCode and curl commands)
   - `6334`: gRPC (optional, for advanced use)
 - **volumes**: Persistent storage for your vector data
 - **restart**: Auto-restart on system reboot
 - **healthcheck**: Monitors Qdrant's health status
+
+**Note:** If you're not using a custom Docker network like `ollama-network`, simply remove the `networks:` section from both the service definition (lines 62-63) and the networks declaration (lines 77-79). Qdrant will work perfectly with localhost connections.
 
 **Deploy the container:**
 
@@ -98,10 +102,16 @@ volumes:
 docker compose up -d
 ```
 
-**Expected output:**
+**Expected output (with custom network):**
 ```
 [+] Running 2/2
  ✔ Network ollama-network    Found
+ ✔ Container qdrant          Started
+```
+
+**Expected output (without custom network):**
+```
+[+] Running 1/1
  ✔ Container qdrant          Started
 ```
 
@@ -124,10 +134,10 @@ curl http://localhost:6333/
 # Expected output:
 # {"title":"qdrant - vector search engine","version":"1.x.x"}
 
-# 3. Verify it's on the correct network
+# 3. (Optional) If using custom Docker network, verify Qdrant joined it
 docker network inspect ollama-network | grep -A 5 qdrant
 
-# Should show qdrant in the containers list
+# Should show qdrant in the containers list (skip if not using custom network)
 
 # 4. Open Qdrant dashboard (optional)
 # Browse to: http://localhost:6333/dashboard
@@ -381,20 +391,11 @@ Docker images:   ~200MB (Qdrant)
 
 ## Troubleshooting
 
-### Issue 1: "Model not found" in KiloCode
-
-**Symptom:** KiloCode can't find the embedding model
-
-**Diagnosis:**
-```bash
-docker exec ollama ollama list | grep qwen3-embedding
-```
-
-**Fix:** Verify the model name is exactly `qwen3-embedding:8b-fp16` in KiloCode settings
+**Note:** For Ollama-specific issues (model not found, embedding generation errors), see [3_QWEN3_OLLAMA_GUIDE.md](3_QWEN3_OLLAMA_GUIDE.md). For general KiloCode troubleshooting, see [README.md](README.md) or [FAQ.md](FAQ.md). This section covers Qdrant-specific issues only.
 
 ---
 
-### Issue 2: Qdrant connection refused
+### Issue 1: Qdrant connection refused
 
 **Symptom:** KiloCode can't connect to Qdrant
 
@@ -418,29 +419,7 @@ docker logs qdrant --tail 50
 
 ---
 
-### Issue 3: Very slow indexing
-
-**Symptom:** Indexing takes much longer than expected
-
-**Diagnosis:**
-```bash
-# Check GPU usage
-nvidia-smi
-
-# Check container resources
-docker stats ollama qdrant
-```
-
-**Possible causes:**
-- Other processes using VRAM
-- Model offloading to CPU (VRAM full)
-- Disk I/O bottleneck (rare)
-
-**Fix:** Close other GPU applications, ensure ~15GB VRAM is available
-
----
-
-### Issue 4: Dimension mismatch error
+### Issue 2: Dimension mismatch error
 
 **Symptom:** Error about vector dimensions not matching
 
@@ -466,7 +445,7 @@ curl -X PUT http://localhost:6333/collections/kilocode_codebase \
 
 ---
 
-### Issue 5: Search results seem irrelevant
+### Issue 3: Search results seem irrelevant
 
 **Symptom:** Search doesn't find expected code
 
@@ -654,7 +633,7 @@ curl -H "api-key: your-super-secret-key-here" \
 
 You now have a production-ready local codebase indexing system:
 
-✅ **Qwen3-Embedding-8B**: State-of-the-art code embeddings (#1 MTEB rank)
+✅ **Qwen3-Embedding-8B**: State-of-the-art code embeddings (SOTA for consumer GPUs, 80.68 on MTEB Code)
 ✅ **Qdrant**: Fast, efficient vector database
 ✅ **4096 dimensions**: Maximum quality (Qwen3-8B output)
 ✅ **Local setup**: Complete privacy, no API costs

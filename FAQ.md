@@ -4,26 +4,52 @@ Quick reference guide for understanding Qdrant collections and KiloCode workflow
 
 ---
 
+## Table of Contents
+
+### Why RAG?
+- [Why Do I Need This? (RAG Explained)](#why-do-i-need-this-rag-explained)
+- [What's the difference between asking an LLM with and without RAG?](#whats-the-difference-between-asking-an-llm-with-and-without-rag)
+- [Real Example Comparison](#real-example-comparison)
+- [What are the benefits of RAG?](#what-are-the-benefits-of-rag)
+- [What are the downsides?](#what-are-the-downsides)
+- [Is this the same as "Custom GPTs" or "Claude Projects"?](#is-this-the-same-as-custom-gpts-or-claude-projects)
+
+### Collections & Vectors
+- [Understanding Collections](#understanding-collections)
+- [Understanding Vectors](#understanding-vectors)
+
+### Workflow
+- [KiloCode Workflow](#kilocode-workflow)
+- [Collection Configuration](#collection-configuration)
+- [Troubleshooting](#troubleshooting)
+
+### Reference
+- [Quick Reference](#quick-reference)
+- [Architecture Summary](#architecture-summary)
+- [Next Steps](#next-steps)
+
+---
+
 ## Why Do I Need This? (RAG Explained)
 
 ### What's the difference between asking an LLM with and without RAG?
 
-**RAG (Retrieval Augmented Generation)** is the difference between **blind file reading** vs. **intelligent semantic search**.
+**RAG (Retrieval Augmented Generation)** is the difference between **semantic search** vs. **keyword matching/prompting**.
 
 **Without RAG (Normal LLM):**
 
 You: *"How does error handling work in this project?"*
 
 LLM has to:
-- 📂 Open files **blindly** hoping to find relevant code
-- 🎲 Guess which files might contain error handling
-- 📖 Read **entire files** even if only 5 lines are relevant
-- 🐌 Slow and expensive (token usage) for large codebases
-- 🤷 Might **give up** and provide generic advice
+- 📝 Rely on your prompting to identify what files to search for
+- 🔤 Use exact terminology or better prompting techniques to identify relevant files
+- 📖 Read files based on keyword matching (like grep/Ctrl+F) - requires knowing the exact terms used
+- 🐌 Potentially inefficient - might read many files to find relevant code, wasting tokens
+- 🤷 Might provide **generic advice** if can't identify the right files
 
-LLM says: *"Typically in Node.js projects, you use try/catch blocks or error middleware. Common patterns include..."* (generic fallback)
+LLM says: *"Typically in Node.js projects, you use try/catch blocks or error middleware. Common patterns include..."* (generic fallback, or reads 5+ files hoping to find relevant code)
 
-**Problem:** Like reading **every page of a book** to find one paragraph, or browsing **every website on the internet** instead of using Google.
+**The limitation:** Both grep/keyword search and file-by-file reading are fast, but require you to know the exact terminology used in your codebase, or craft detailed prompts to guide the search.
 
 ---
 
@@ -31,17 +57,19 @@ LLM says: *"Typically in Node.js projects, you use try/catch blocks or error mid
 
 You: *"How does error handling work in this project?"*
 
-1. **Semantic search FIRST** - Like using Google: finds code by *meaning*
-2. **KiloCode searches** the entire codebase in milliseconds
-3. **Finds relevant code** - `ErrorHandler`, `try/catch`, `error middleware` across ALL files
+1. **Semantic search FIRST** - Finds code by *meaning*, not just keywords
+2. **KiloCode searches** the entire codebase in milliseconds using vector similarity
+3. **Finds relevant code** - Understands "error handling" relates to `ErrorHandler`, `try/catch`, `error middleware`, even if you use different words
 4. **Top 50 matches** sent to LLM (only relevant snippets, not entire files)
 5. **LLM answers with context** from YOUR actual code
 
 LLM says: *"Your project uses a custom ErrorHandler middleware in `src/middleware/error.ts:23-45` that catches all Express errors. It logs to Winston and sends formatted JSON responses. Database errors are handled separately in `src/db/connection.ts:89-102` with retry logic."*
 
-**Result:** Accurate, specific, fast. Like **using Google** to instantly find the exact information you need.
+**Result:** Accurate, specific, fast. Semantic search understands meaning across different naming conventions.
 
-**The key difference:** Both CAN access your code, but RAG uses **semantic search** (meaning-based) to find relevant parts in milliseconds, while without RAG the LLM reads files blindly and often misses important code.
+**The key difference:** RAG's semantic search finds code by meaning (not just keywords), enabling natural language queries across different naming conventions. Without RAG, you need exact terminology or better prompting to identify what to search for.
+
+**Analogy:** Like Google's semantic search vs. Ctrl+F/grep keyword matching - both find things fast, but semantic search understands meaning (finds "authentication" when you search "user verification"), while keyword search requires knowing the exact terms used in the code.
 
 ---
 
