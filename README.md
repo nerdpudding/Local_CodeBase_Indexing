@@ -173,28 +173,19 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 
 ---
 
-### How RAG Works (The Stack)
+### How RAG Works (Conceptual Overview)
 
-```
-You Ask: "How does auth work?"
-    ↓
-KiloCode (VS Code Extension)
-    ↓ Sends query to Ollama API
-Ollama + Qwen3-Embedding-8B-FP16 (RTX 4090)
-    ↓ Creates 4096-dimension vector embedding
-    ↓ Returns vector to KiloCode
-KiloCode sends vector to Qdrant
-    ↓
-Qdrant Vector Database
-    ↓ Finds similar code via cosine similarity
-Top 50 Relevant Code Snippets
-    ↓ Injected into LLM context
-LLM (with YOUR code context)
-    ↓ Generates accurate answer
-"Your auth is in middleware/auth.ts using JWT..."
-```
+RAG works in three simple steps:
+
+1. **Index Once** - Parse your codebase, convert semantic blocks (functions, classes) into vector embeddings, store in Qdrant
+2. **Auto-Update** - File watcher detects changes, automatically re-indexes modified files only (fast, incremental)
+3. **Search Instantly** - When you ask a question, convert query to vector, find similar code via semantic search, inject into LLM context
+
+**The magic:** Instead of reading files randomly, the system performs semantic search to find ONLY the relevant code snippets. Your question "how does auth work?" instantly retrieves authentication-related functions across the entire codebase, then feeds them to the LLM for accurate answers.
 
 **This is production-grade RAG** - the same technology behind ChatGPT's "custom GPTs" and enterprise AI assistants, but 100% local.
+
+**For detailed technical flows with KiloCode orchestration:** See [Architecture](#architecture) section below (Initial Indexing, Auto-Update, and Search flows).
 
 ---
 
