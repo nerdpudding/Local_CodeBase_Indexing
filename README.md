@@ -373,22 +373,52 @@ This repository contains comprehensive documentation organized by workflow:
 
 ## Architecture
 
-### Data Flow: Indexing
+### Initial Indexing Flow (First Time Setup)
 ```
-Code Files
+User clicks "Start Indexing" in KiloCode
   ↓
-KiloCode (VS Code Extension)
-  ↓ Parses with Tree-sitter
+KiloCode checks if Qdrant collection exists
+  ↓ No collection found
+KiloCode creates new collection (workspace-based name)
+  ↓
+KiloCode scans entire codebase
+  ↓ Reads all code files
+KiloCode parses files with Tree-sitter
+  ↓ Extracts all semantic blocks
 Semantic Blocks (functions, classes, methods)
-  ↓ KiloCode sends blocks to Ollama API
+  ↓ KiloCode sends blocks to Ollama API (batched)
 Ollama + Qwen3-Embedding-8B-FP16
   ↓ Creates 4096-dim vector embeddings
   ↓ Returns vectors to KiloCode
 KiloCode sends vectors + metadata to Qdrant
-  ↓
+  ↓ Stores all vectors
 Qdrant Collection (kilocode_codebase)
   ↓ Persistent storage
-Indexed Codebase
+Indexed Codebase ✅
+  ↓
+Status: Gray → Yellow (indexing) → Green (ready)
+```
+
+### Auto-Update Flow (File Changes)
+```
+File watcher detects change (save/delete/create)
+  ↓
+KiloCode identifies changed file(s)
+  ↓
+KiloCode deletes old vectors for that file from Qdrant
+  ↓
+KiloCode re-parses changed file with Tree-sitter
+  ↓ Extracts new/modified blocks
+Semantic Blocks (updated)
+  ↓ KiloCode sends blocks to Ollama API
+Ollama + Qwen3-Embedding-8B-FP16
+  ↓ Creates 4096-dim vector embeddings
+  ↓ Returns vectors to KiloCode
+KiloCode sends updated vectors + metadata to Qdrant
+  ↓ Replaces old vectors
+Qdrant Collection (kilocode_codebase)
+  ↓ Updated storage
+Index stays current ✅ (incremental, fast)
 ```
 
 ### Data Flow: Search
