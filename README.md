@@ -49,15 +49,17 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 
 **You ask an LLM:** *"How does error handling work in this project?"*
 
-**Without codebase indexing, the LLM:**
-- ❌ Doesn't know YOUR code exists
-- ❌ Guesses based on general programming knowledge
-- ❌ Might hallucinate patterns you don't actually use
-- ❌ Gives generic answers like "typically you use try/catch..."
-- ❌ Can't point to actual files or line numbers
-- ❌ Requires you to manually copy/paste code into prompts
+**Without codebase indexing, the LLM has to:**
+- ❌ **Read files blindly** - Opens random files hoping to find relevant code
+- ❌ **No semantic understanding** - Can't search by meaning, only by filename/path
+- ❌ **Wastes time on irrelevant files** - Like reading every page of a book to find one paragraph
+- ❌ **Struggles with large codebases** - 100+ files? Good luck finding the right ones
+- ❌ **Expensive token usage** - Reads entire files even if only 5 lines are relevant
+- ❌ **Might give up** - Falls back to generic advice if it can't find anything quickly
 
-**Result:** Vague, generic answers that may not match your actual implementation.
+**Result:** Either vague generic answers, or it reads 20 files and still misses the important ones.
+
+**Analogy:** Like trying to find a specific topic on the internet by opening **every single website** and reading them one by one, instead of using Google.
 
 ---
 
@@ -65,15 +67,19 @@ This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate con
 
 **You ask the same question:** *"How does error handling work in this project?"*
 
-**With codebase indexing, the LLM:**
-1. ✅ **Searches your code** - Finds all error handling patterns semantically
-2. ✅ **Gets actual snippets** - Retrieves relevant code from YOUR project
-3. ✅ **Answers with context** - Uses YOUR code to give accurate answers
-4. ✅ **Cites sources** - Points to specific files and line numbers
-5. ✅ **No hallucination** - Based on real code, not guesses
+**With codebase indexing, the LLM does:**
+1. ✅ **Semantic search FIRST** - Like using Google: finds relevant code by *meaning*, not filenames
+2. ✅ **Gets only relevant snippets** - Retrieves top 50 matches for "error handling" across entire codebase
+3. ✅ **Faster & more accurate** - Finds `ErrorHandler`, `try/catch`, `error middleware` even if files aren't named that
+4. ✅ **Efficient** - Only reads relevant parts, not entire files
+5. ✅ **Comprehensive** - Finds ALL error patterns across multiple files in milliseconds
+6. ✅ **Answers with context** - Uses YOUR actual code to give specific answers
+7. ✅ **Cites sources** - Points to exact files and line numbers
 
 **Result:** Accurate, project-specific answers like:
 > "Your project uses custom ErrorHandler middleware in `src/middleware/error.ts:23-45` that catches all Express errors and logs them to Winston. Database errors are handled separately in `src/db/connection.ts:89-102` with retry logic."
+
+**Analogy:** Like using Google to search "error handling patterns in Node.js" and getting the exact StackOverflow answers you need, instead of reading every forum post on the internet.
 
 ---
 
