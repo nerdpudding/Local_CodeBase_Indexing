@@ -4,6 +4,43 @@
 
 A complete local setup for intelligent codebase indexing using Ollama, Qwen3 embeddings, Qdrant vector database, and the KiloCode VS Code extension. Provides natural language code search with 100% privacy, no API costs, and no rate limits.
 
+---
+
+## Table of Contents
+
+- [What This Is (RAG for Code)](#what-this-is-rag-for-code)
+  - [The Problem Without RAG](#the-problem-without-rag)
+  - [The Solution With RAG](#the-solution-with-rag-this-project)
+  - [Why This Matters](#why-this-matters)
+  - [Key Benefits](#key-benefits)
+  - [Trade-offs](#trade-offs)
+  - [How RAG Works](#how-rag-works-the-stack)
+  - [Why Local?](#why-local)
+- [Tech Stack](#tech-stack)
+- [Key Features](#key-features)
+- [Why Qwen3-Embedding-8B?](#why-qwen3-embedding-8b)
+- [Why 4096 Dimensions?](#why-4096-dimensions)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+  - [1. Pull the Embedding Model](#1-pull-the-embedding-model)
+  - [2. Deploy Qdrant](#2-deploy-qdrant)
+  - [3. Configure KiloCode](#3-configure-kilocode)
+  - [4. Start Indexing](#4-start-indexing)
+  - [5. Search!](#5-search)
+- [Documentation](#documentation)
+- [Architecture](#architecture)
+- [Configuration Details](#configuration-details)
+- [Performance Expectations](#performance-expectations)
+- [Cost Analysis](#cost-analysis)
+- [Project Status](#project-status)
+- [Troubleshooting](#troubleshooting)
+- [Technical References](#technical-references)
+- [License](#license)
+- [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
+
+---
+
 ## What This Is (RAG for Code)
 
 This is **RAG (Retrieval Augmented Generation)** - giving AI models accurate context from YOUR codebase before they answer questions.
