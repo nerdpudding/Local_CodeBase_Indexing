@@ -18,7 +18,7 @@ This document details the research and analysis conducted to select the optimal 
 - **Quantization**: FP16 recommended for maximum quality
 - **Hardware Requirements**: ~15GB VRAM (fits RTX 4090/similar GPUs)
 
-**Note**: Research showed 1024 dimensions would be sufficient (98-99% quality), but Qwen3-Embedding-8B-FP16 through Ollama outputs 4096 dimensions natively. For hardware with 16GB+ VRAM, using 4096 provides maximum quality with no configuration needed. See [Dimension Analysis](#dimension-analysis) for optimization options with hardware constraints.
+**Note**: Research showed 1024 dimensions would be sufficient (minimal quality loss), but Qwen3-Embedding-8B-FP16 through Ollama outputs 4096 dimensions natively. For hardware with 16GB+ VRAM, using 4096 provides maximum quality with no configuration needed. See [Dimension Analysis](#dimension-analysis) for optimization options with hardware constraints.
 
 ---
 
@@ -170,31 +170,33 @@ Qwen3-Embedding-8B uses MRL, which means:
 - **Earlier dimensions contain more important information**
 - Quality degrades gracefully as you reduce dimensions
 
-Think of it like nested dolls:
+Think of it like nested dolls - earlier dimensions contain the most important information:
 ```
-First 256 dims:  Core semantic meaning      (~95% quality)
-First 512 dims:  Rich understanding         (~97% quality)
-First 1024 dims: Detailed semantics         (~99% quality) ⭐
-First 2048 dims: Very fine nuances          (~99.7% quality)
-Full 4096 dims:  Maximum detail             (100% quality)
+First 256 dims:  Core semantic meaning      (noticeable degradation)
+First 512 dims:  Rich understanding         (minor degradation)
+First 1024 dims: Detailed semantics         (minimal degradation) ⭐
+First 2048 dims: Very fine nuances          (near-full quality)
+Full 4096 dims:  Maximum detail             (full quality)
 ```
 
 ### Dimension Comparison
 
-| Dimension | Quality | Storage/Vector | Qdrant RAM (10K vectors) | Search Speed | Use Case |
-|-----------|---------|----------------|--------------------------|--------------|----------|
-| 256 | ~95% | 1KB | ~15MB | Fastest | Mobile, 10M+ vectors |
-| 512 | ~97% | 2KB | ~30MB | Very Fast | Large scale (100K+ files) |
-| 1024 | ~99% | 4KB | ~60MB | Fast | Balanced (sufficient for most) |
-| 2048 | ~99.7% | 8KB | ~120MB | Moderate | Specialized domains |
-| **4096** | **100%** | **16KB** | **~240MB** | **Fast** | **Maximum quality (our choice)** |
+| Dimension | Quality Impact | Storage/Vector | Qdrant RAM (10K vectors) | Use Case |
+|-----------|---------------|----------------|--------------------------|----------|
+| 256 | Noticeable degradation | 1KB | ~15MB | Mobile, 10M+ vectors, storage-critical |
+| 512 | Minor degradation | 2KB | ~30MB | Large scale (100K+ files), speed-critical |
+| 1024 | Minimal degradation | 4KB | ~60MB | Balanced quality/efficiency |
+| 2048 | Near-full quality | 8KB | ~120MB | Specialized/high-precision needs |
+| **4096** | **Full quality** | **16KB** | **~240MB** | **Maximum precision (our choice)** |
+
+> **Note:** Quality retention varies by model and task. One study (Voyage-3-large) showed only 0.31% quality loss at 1024 vs 2048 dimensions. Matryoshka-trained models like Qwen3 are specifically designed for graceful degradation at lower dimensions.
 
 ### Understanding Dimension Trade-offs
 
 **Performance vs Resources**:
-- Industry studies show 1024 dims achieves 98-99% of maximum quality
-- Voyage-3-large: only 0.31% drop from 2048→1024 dims
-- The 1-2% quality gain from higher dims may not be noticeable in practice
+- 1024 dimensions typically provide minimal quality degradation for most use cases
+- Example: Voyage-3-large showed only 0.31% quality loss from 2048→1024 dims
+- Quality gains from higher dimensions may not be noticeable in practice
 - However, maximum quality (4096) is preferred when hardware allows
 
 **Storage Requirements**:

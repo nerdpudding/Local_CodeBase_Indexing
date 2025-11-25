@@ -215,15 +215,17 @@ Qwen3 supports Matryoshka embeddings (32-4096 dimensions), but **Qwen3-8B via Ol
 - **Speed:** Fast search with GPU acceleration
 - **Storage:** ~160MB for 10K blocks (acceptable with local setup)
 
-**Note:** While 1024 dimensions would be more storage-efficient (98-99% quality), using the model's 4096 output as-is eliminates configuration complexity and provides maximum quality for local deployments.
+**Note:** While 1024 dimensions would be more storage-efficient (minimal quality loss), using the model's 4096 output as-is eliminates configuration complexity and provides maximum quality for local deployments.
 
-| Dimensions | Quality | Use Case |
-|------------|---------|----------|
-| 256 | ~95% | Mobile/massive scale |
-| 512 | ~97% | Large scale deployments |
-| 1024 | ~99% | Balanced quality/storage |
-| 2048 | ~99.7% | Specialized domains |
-| **4096** | **100%** | **This project (model default)** |
+| Dimension | Quality Impact | Use Case |
+|-----------|---------------|----------|
+| 256 | Noticeable degradation | Mobile, 10M+ vectors, storage-critical |
+| 512 | Minor degradation | Large scale (100K+ files), speed-critical |
+| 1024 | Minimal degradation | Balanced quality/efficiency |
+| 2048 | Near-full quality | Specialized/high-precision needs |
+| **4096** | **Full quality** | **Maximum precision (our choice)** |
+
+> Quality retention varies by model and task. One study (Voyage-3-large) showed only 0.31% quality loss at 1024 vs 2048 dimensions. Matryoshka-trained models like Qwen3 are specifically designed for graceful degradation at lower dimensions.
 
 **Note:** While the model supports Matryoshka embeddings (configurable dimensions), when using Qwen3-Embedding-8B-FP16 through Ollama it outputs **4096 dimensions**. This provides maximum quality with no extra configuration needed.
 
